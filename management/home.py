@@ -94,7 +94,7 @@ def get_entries_home(request):
         entry_list.append(new_entry)
 
         # update our total hours (if it's billable!)
-        if 'non-billable' not in entry[6]:
+        if 'non-billable' not in entry[6].lower():
             total_hours += entry[4]
         else:
             support += entry[4]
@@ -321,7 +321,7 @@ def get_entries_home_page(request):
         entry_list.append(new_entry)
 
         # update our total hours (if it's billable!)
-        if 'non-billable' not in entry[6]:
+        if 'non-billable' not in entry[6].lower():
             total_hours += entry[4]
         else:
             support += entry[4]
