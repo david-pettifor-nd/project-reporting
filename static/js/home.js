@@ -7,7 +7,7 @@ var expected = 0;
 function GetOverview()
 {
 	$.ajax({
-		url: '../get_entries',
+		url: '../get_all_entries',
 		data: {month: today.getMonth() + 1, year: today.getFullYear(), order: 'date', by: 'asc'},
 		dataType: 'json',
 		success: function(data){
@@ -93,11 +93,6 @@ function SetupExpected(data)
 			color: '#76addb',
 			type: 'column',
 			data: entries
-		}, {
-			name: 'Expected Hours',
-			color: '#ce0000',
-			type: 'spline',
-			data: expected_list
 		}]
 	});
 }
@@ -105,7 +100,7 @@ function SetupExpected(data)
 function GetDistro()
 {
 	$.ajax({
-		url: "../get_distribution",
+		url: "../get_all_distribution",
 		data: {start_date: today.getFullYear() + '-' + (today.getMonth()+1) + '-01', end_date: today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()},
 		dataType: 'json',
 		success: function(data){

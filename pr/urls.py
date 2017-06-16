@@ -20,7 +20,7 @@ from django.conf.urls import include
 from management.planning import planning_home, get_all_dev_assignments, get_assignments, get_planning_projection, \
     developer_assignments, deactivate, activate, update_supervisor, remove_assignment, add_assignment
 
-from management.home import home, get_entries_home, get_distribution
+from management.home import home, get_entries_home, get_distribution, get_entries_home_page, get_all_distribution
 from management.time_entries import entries_home, get_date_range, get_project_activities, update_entries, delete_entry
 from management.calendar_view import calendar_home, update_entry_data, copy_entry
 from management.distribution import distribution_home, get_entries
@@ -38,7 +38,9 @@ urlpatterns = [
     # Home Page
     url(r'^home/$', home, name='home'),
     url(r'^get_entries/$', get_entries_home, name="get_entries"),
+    url(r'^get_all_entries/$', get_entries_home_page, name="get_all_entries"),
     url(r'^get_distribution/$', get_distribution, name="get_distribution"),
+    url(r'^get_all_distribution/$', get_all_distribution, name="get_all_distribution"),
 
     # Time Entries (row-by-row)
     url(r'^time_entries/$', entries_home, name="time_entries"),
