@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django_extensions',
     #'skillsmatrix.apps.SkillsmatrixConfig',
     # used on prod for CAS authentication
-    'mama_cas',
+    'cas'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -52,7 +52,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # used on prod for CAS authentication
-    #'cas.middleware.CASMiddleware',
+    'cas.middleware.CASMiddleware',
 ]
 
 

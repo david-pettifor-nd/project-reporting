@@ -105,6 +105,9 @@ urlpatterns = [
     # OR you can use these login pages:
     url(r'^accounts/login/$', login_page, name='login'),
     url(r'^accounts/logout/$', logout_request, name='logout'),
+    url(r'^login/$', login_page, name='login'),
+    url(r'^logout/$', logout_request, name='logout'),
+
 
 
 ]
