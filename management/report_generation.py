@@ -5,6 +5,8 @@ import datetime
 import calendar  # used for converting month integers to text
 import csv
 import costs
+from django.contrib.auth.decorators import login_required
+from management.decorators import user_is_in_manager_group
 
 
 class RedmineProject:
@@ -97,6 +99,8 @@ def check_fopal(fopal=''):
         return False
 
 
+@login_required
+@user_is_in_manager_group
 def report_generator_home(request):
     # connect to our database
     cur = connection.cursor()
@@ -237,6 +241,8 @@ def report_generator_home(request):
     return render(request, 'report_generator.html', context)
 
 
+@login_required
+@user_is_in_manager_group
 def generate_internal_report(request):
     # Top line - column headers
     header = ['Primary Comments', 'Customer Account Number', 'Transaction Date', 'Service Description', 'Quantity',
@@ -459,6 +465,9 @@ def generate_internal_report(request):
     return response
 
 
+
+@login_required
+@user_is_in_manager_group
 def generate_csr_report(request):
     # Top line - column headers
     header = ['Primary Comments', 'Customer Account Number', 'Transaction Date', 'Service Description', 'Quantity',
@@ -674,6 +683,9 @@ def generate_csr_report(request):
     return response
 
 
+
+@login_required
+@user_is_in_manager_group
 def generate_external_report(request):
     # Top line - column headers
     header = ['Primary Comments', 'Customer Account Number', 'Transaction Date', 'Service Description', 'Quantity',
@@ -924,6 +936,8 @@ def generate_external_report(request):
     return response
 
 
+@login_required
+@user_is_in_manager_group
 def missing_hours(request):
     # connect to our database
     cur = connection.cursor()

@@ -3,14 +3,16 @@ from django.db import connection
 import json
 
 from django.contrib.auth.decorators import login_required
-
+from management.decorators import user_is_in_manager_group
 
 @login_required
+@user_is_in_manager_group
 def distribution_home(request):
     return render(request, 'distribution.html', {})
 
 
 @login_required
+@user_is_in_manager_group
 def get_entries(request):
     # first check to make sure we have all we need
     # do we have a date range?

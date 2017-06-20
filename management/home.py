@@ -5,14 +5,17 @@ from holidays import get_holidays
 import calendar
 import json
 from django.contrib.auth.decorators import login_required
+from management.decorators import user_is_in_manager_group
 
 
 @login_required
+@user_is_in_manager_group
 def home(request):
     return render(request, 'home.html', {})
 
 
 @login_required
+@user_is_in_manager_group
 def get_entries_home(request):
     """
         Generates the landing page for anyone to come to for them to change/modify
@@ -251,6 +254,7 @@ def get_entries_home(request):
 
 
 @login_required
+@user_is_in_manager_group
 def get_entries_home_page(request):
     """
         Generates the landing page for anyone to come to for them to change/modify
@@ -478,6 +482,7 @@ def get_entries_home_page(request):
 
 
 @login_required
+@user_is_in_manager_group
 def get_distribution(request):
     # connect to the database
     cur = connection.cursor()
@@ -593,6 +598,7 @@ def get_distribution(request):
 
 
 @login_required
+@user_is_in_manager_group
 def get_all_distribution(request):
     # connect to the database
     cur = connection.cursor()

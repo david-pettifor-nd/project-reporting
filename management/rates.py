@@ -2,8 +2,12 @@ from django.db import connection
 from django.shortcuts import render, HttpResponse
 import datetime
 from pr.settings.base import LOGGING_CATEGORY_NAME
+from management.decorators import user_is_in_manager_group
+from django.contrib.auth.decorators import login_required
 
 
+@login_required
+@user_is_in_manager_group
 def rates_home(request):
     # connect to our database
     cur = connection.cursor()
@@ -56,6 +60,8 @@ def rates_home(request):
                                           'next_fiscal_end': next_fiscal_end})
 
 
+@login_required
+@user_is_in_manager_group
 def save_rate(request):
     # connect to our database
     cur = connection.cursor()
@@ -68,6 +74,8 @@ def save_rate(request):
     return HttpResponse(200)
 
 
+@login_required
+@user_is_in_manager_group
 def save_start_date(request):
     ids = request.GET.getlist('ids[]')
     id_list = []
@@ -85,6 +93,8 @@ def save_start_date(request):
     return HttpResponse(200)
 
 
+@login_required
+@user_is_in_manager_group
 def save_end_date(request):
     ids = request.GET.getlist('ids[]')
     id_list = []
@@ -102,6 +112,8 @@ def save_end_date(request):
     return HttpResponse(200)
 
 
+@login_required
+@user_is_in_manager_group
 def save_rates(request):
     ids = request.GET.getlist('ids[]')
     id_list = []
@@ -119,6 +131,8 @@ def save_rates(request):
     return HttpResponse(200)
 
 
+@login_required
+@user_is_in_manager_group
 def delete_rates(request):
     ids = request.GET.getlist('ids[]')
     id_list = []
@@ -135,6 +149,8 @@ def delete_rates(request):
     return HttpResponse(200)
 
 
+@login_required
+@user_is_in_manager_group
 def add_single_category(request):
     # connect to our database
     cur = connection.cursor()
@@ -154,6 +170,9 @@ def add_single_category(request):
 
     return HttpResponse(200)
 
+
+@login_required
+@user_is_in_manager_group
 def add_rates(request):
     # connect to our database
     cur = connection.cursor()
