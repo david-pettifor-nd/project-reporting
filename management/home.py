@@ -62,6 +62,15 @@ def get_entries_home(request):
         "AND custom_values.value != '' and time_entries.tmonth = %(month)s AND users.login = '%(user)s' ORDER BY %(order)s;" % {
             'month': month, 'year': year, 'user': target, 'order': order_by})
 
+    print cur.mogrify( "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
+        "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
+        "projects.id FROM time_entries INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
+        "INNER JOIN users ON users.id = time_entries.user_id "
+        "INNER JOIN projects ON projects.id = time_entries.project_id "
+        "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id WHERE time_entries.tyear = %(year)s "
+        "AND custom_values.value != '' and time_entries.tmonth = %(month)s AND users.login = '%(user)s' ORDER BY %(order)s;" % {
+            'month': month, 'year': year, 'user': target, 'order': order_by})
+
     entries = cur.fetchall()
     print entries
 
@@ -251,6 +260,7 @@ def get_entries_home_page(request):
         Generates the landing page for anyone to come to for them to change/modify
         their hours.  It allows for users to move hours from project to project.
         """
+    print "HEY"
     # target
     target = request.user.username
     if request.user.is_staff and 'target' in request.GET and request.GET['target'] != '':
@@ -283,6 +293,15 @@ def get_entries_home_page(request):
 
     # get the records for this user, month, and year
     cur.execute(
+        "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
+        "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
+        "projects.id FROM time_entries INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
+        "INNER JOIN projects ON projects.id = time_entries.project_id "
+        "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id WHERE time_entries.tyear = %(year)s "
+        "AND time_entries.tmonth = %(month)s AND custom_values.value != '' ORDER BY %(order)s;" % {
+            'month': month, 'year': year, 'user': target, 'order': order_by})
+
+    print cur.mogrify(
         "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
         "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
         "projects.id FROM time_entries INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
