@@ -423,8 +423,8 @@ def generate_internal_report(request):
                 new_record['category'] = cores_display  # (cost_lib.getCORESName(record[3]))		# Service Category
                 new_record['secondary_comments'] = '"' + record[2] + ' ' + record[
                     1] + '"'  # Secondary comments (always empty?)
-                new_record['fpi'] = '"' + fpi + '"'  # Financially responsible PI (formatted as: "Last,First MI")
-                new_record['pi'] = (pi)  # Purchasers Last Name (PI we're working with)
+                new_record['fpi'] = (pi)  # Financially responsible PI (formatted as: "Last,First MI")
+                new_record['pi'] = '"' + fpi + '"'  # Purchasers Last Name (PI we're working with)
                 new_record['center'] = '""'  # Short Contributing Center Name
                 new_record['resource'] = '""'  # Resource Name
                 new_record['login'] = '"' + record[4] + '"'  # Line Item Assistant (netID of the user)
