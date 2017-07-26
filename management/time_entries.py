@@ -132,6 +132,7 @@ def update_entries(request):
 
     # now let's run through each entry and perform our update
     for entry in entries:
+        # print entry
         # format the date properly
         edate = entry['date'].split('-')
         entry_date = datetime.date(int(edate[0]), int(edate[1]), int(edate[2]))
@@ -186,7 +187,8 @@ def update_entries(request):
                         'id': timeid, 'value': entry['logas']}
         else:
             query = "UPDATE custom_values SET value = '%(value)s' WHERE customized_id = %(id)s " \
-                    "AND custom_field_id = 9 AND customized_type = 'TimeEntry';" % {
+                    "AND custom_field_id = (select id from custom_fields where lower(name) like '%%log%%as%%') " \
+                    "AND customized_type = 'TimeEntry';" % {
                         'id': entry['id'], 'value': entry['logas']}
         cur.execute(query)
 

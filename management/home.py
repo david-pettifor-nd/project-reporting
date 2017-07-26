@@ -102,6 +102,8 @@ def get_entries_home(request):
         else:
             support += entry[4]
 
+        # print new_entry
+
     # round our total hours
     total_hours = round(total_hours, 2)
 
