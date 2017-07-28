@@ -305,6 +305,7 @@ def generate_internal_report(request):
                         " where custom_values.customized_type = 'TimeEntry'"
                         " and time_entries.project_id = %(project_id)s;" % {'project_id': project})
             hours = cur.fetchone()
+
             # print "HOURS for", project, ":", hours
             if len(hours) == 1 and hours[0] is None:
                 continue
@@ -365,12 +366,14 @@ def generate_internal_report(request):
                 "inner join projects on projects.id = time_entries.project_id "
                 "inner join enumerations on enumerations.id = time_entries.activity_id "
                 "where (time_entries.project_id = %(project_id)s or time_entries.project_id = any(childlist(%(project_id)s))) "
-                "and lower(custom_fields.name) = lower('Log as') "
+                "and custom_values.value != '' "
                 "and time_entries.tmonth = %(month)s and time_entries.tyear = %(year)s "
                 "and lower(enumerations.name) not like '%%non%%billable' "
                 "group by users.firstname, users.lastname, users.login, custom_values.value, time_entries.spent_on "
                 "order by users.lastname;" % {'project_id': project, 'month': request.GET['month'], 'year': request.GET['year']})
+
             times = cur.fetchall()
+            print "TIMES:", times
             # print times
             # format of the "times":
             # times[0] = summation of hours
