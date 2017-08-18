@@ -71,35 +71,35 @@ function init()
 	});
 
 	//--------------- Setup Onchange Events for Month/Year Selections ----------------------------------//
-	$('#month').change(function(){
-		// grab an updated missing hour count
-		$.ajax({
-			url: '../missing_hours',
-			data: {month: $('#month').val(), year: $('#year').val()},
-			dataType: "text",
-			success: function(missing_hours){
-				$('#missing_hour_count').html(missing_hours);
-			},
-			error: function(){
-				alert("Could not retrieve unassigned hours.");
-			}
-		});
-	});
-
-	$('#year').change(function(){
-		// grab an updated missing hour count
-		$.ajax({
-			url: '../missing_hours',
-			data: {month: $('#month').val(), year: $('#year').val()},
-			dataType: "text",
-			success: function(missing_hours){
-				$("#missing_hour_count").html(missing_hours);
-			},
-			error: function(){
-				alert("Could not retrieve unassigned hours.");
-			}
-		});
-	});
+	// $('#month').change(function(){
+	// 	// grab an updated missing hour count
+	// 	$.ajax({
+	// 		url: '../missing_hours',
+	// 		data: {month: $('#month').val(), year: $('#year').val()},
+	// 		dataType: "text",
+	// 		success: function(missing_hours){
+	// 			$('#missing_hour_count').html(missing_hours);
+	// 		},
+	// 		error: function(){
+	// 			alert("Could not retrieve unassigned hours.");
+	// 		}
+	// 	});
+	// });
+    //
+	// $('#year').change(function(){
+	// 	// grab an updated missing hour count
+	// 	$.ajax({
+	// 		url: '../missing_hours',
+	// 		data: {month: $('#month').val(), year: $('#year').val()},
+	// 		dataType: "text",
+	// 		success: function(missing_hours){
+	// 			$("#missing_hour_count").html(missing_hours);
+	// 		},
+	// 		error: function(){
+	// 			alert("Could not retrieve unassigned hours.");
+	// 		}
+	// 	});
+	// });
 	
 	//--------------------- Auto-select projects we've selected before ---------------------------------//
 	// get the list of selected projects
@@ -119,7 +119,7 @@ function init()
 				list.push($(this).attr('id'));
 			}
 		});
-		window.location.href = '../generate_internal_report?ProjectList='+list+'&month='+$('#month').val()+'&year='+$('#year').val()+'&all_projects='+$('#check_all_box').attr('checked');
+		window.location.href = '../generate_internal_report?ProjectList='+list+'&start='+$('#date_range').val().split(' - ')[0]+'&end='+$('#date_range').val().split(' - ')[1]+'&all_projects='+$('#check_all_box').attr('checked');
 	});
 
 	$('#external_button').click(function(){

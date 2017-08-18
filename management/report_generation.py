@@ -367,10 +367,11 @@ def generate_internal_report(request):
                 "inner join enumerations on enumerations.id = time_entries.activity_id "
                 "where (time_entries.project_id = %(project_id)s or time_entries.project_id = any(childlist(%(project_id)s))) "
                 "and custom_values.value != '' "
-                "and time_entries.tmonth = %(month)s and time_entries.tyear = %(year)s "
+                "and time_entries.spent_on >= '%(start)s'::date and time_entries.spent_on <= '%(end)s'::date "
                 "and lower(enumerations.name) not like '%%non%%billable' "
                 "group by users.firstname, users.lastname, users.login, custom_values.value, time_entries.spent_on "
-                "order by users.lastname;" % {'project_id': project, 'month': request.GET['month'], 'year': request.GET['year']})
+                "order by users.lastname;" % {'project_id': project, 'start': request.GET['start'],
+                                              'end': request.GET['end']})
 
             times = cur.fetchall()
             print "TIMES:", times
@@ -383,8 +384,8 @@ def generate_internal_report(request):
             # times[4] = login/username
             # times[5] = date of time entry (used for referencing cost)
 
-            # get the last day of the month
-            day = calendar.monthrange(int(request.GET['year']), int(request.GET['month']))[1]
+            # get the last day of the range
+            day = request.GET['end'] #calendar.monthrange(int(request.GET['year']), int(request.GET['month']))[1]
 
             # loop through all time records, creating a new row of information to add
             records = []
@@ -416,9 +417,7 @@ def generate_internal_report(request):
                 new_record = {}
                 new_record['name'] = project_name  # Primary Comments
                 new_record['fopal'] = clean_fopal(fopal)  # Customer Account Number
-                new_record['trans'] = (
-                    str(day) + '-' + calendar.month_abbr[int(request.GET['month'])].upper() + '-' + request.GET['year'][
-                                                                                                2:])  # Transaction Date
+                new_record['trans'] = day  # Transaction Date
                 new_record['service'] = cores_display  # (cost_lib.getCORESName(record[3]))		# Service Description
                 new_record['hours'] = record[0]  # Quantity (Hours)
                 new_record['unit'] = 'Hour'  # Unit (hours)
