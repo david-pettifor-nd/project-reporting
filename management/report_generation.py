@@ -235,8 +235,10 @@ def report_generator_home(request):
         month_list.append(new_month)
 
     # generate our context to pass through
+    start_date = str(datetime.datetime.now().today().month) + '/1/'+str(datetime.datetime.now().today().year)
+    end_date = datetime.datetime.now().today().strftime('%m/%d/%Y')
     context = {'projects': project_list, 'years': year_list, 'months': month_list, 'missing_hours': total_missing,
-               'missing_list': missing_list}
+               'missing_list': missing_list, 'start': start_date, 'end': end_date}
 
     return render(request, 'report_generator.html', context)
 
@@ -245,9 +247,10 @@ def report_generator_home(request):
 @user_is_in_manager_group
 def generate_internal_report(request):
     # Top line - column headers
-    header = ['Primary Comments', 'Customer Account Number', 'Transaction Date', 'Service Description', 'Quantity',
+    header = ['Primary Comments', 'Customer Account Number', 'Core Account Number', 'Service Date', 'Service Description', 'Quantity',
               'Unit', 'Price', 'Service Category', 'Secondary Comments', 'PI\'s Name', 'Purchaser\'s Last Name',
-              'Short Contributing Center Name', 'Resource Name', 'Line Item Assistant', 'Line Item Comments']
+              'Short Contributing Billing Name', 'Resource Name', 'Line Item Assistant', 'Line Item Comments',
+              'Project ID']
 
     project_list = request.GET['ProjectList'].replace('"', '').split(',')
 
@@ -417,6 +420,8 @@ def generate_internal_report(request):
                 new_record = {}
                 new_record['name'] = project_name  # Primary Comments
                 new_record['fopal'] = clean_fopal(fopal)  # Customer Account Number
+                new_record['core_account_number'] = '3900314333340000' # Core Account Number (static for Turbo)
+
                 new_record['trans'] = day  # Transaction Date
                 new_record['service'] = cores_display  # (cost_lib.getCORESName(record[3]))		# Service Description
                 new_record['hours'] = record[0]  # Quantity (Hours)
@@ -431,6 +436,7 @@ def generate_internal_report(request):
                 new_record['resource'] = '""'  # Resource Name
                 new_record['login'] = '"' + record[4] + '"'  # Line Item Assistant (netID of the user)
                 new_record['comment'] = '"' + record[2] + ' ' + record[1] + '"'  # Line Item Comment
+                new_record['project_id'] = '""' # Always blank
 
                 # do we already have this record?
                 added = False
@@ -448,6 +454,7 @@ def generate_internal_report(request):
                 new_record = []
                 new_record.append(record['name'])
                 new_record.append(record['fopal'])
+                new_record.append(record['core_account_number'])
                 new_record.append(record['trans'])
                 new_record.append(record['service'])
                 new_record.append(record['hours'])
@@ -461,6 +468,7 @@ def generate_internal_report(request):
                 new_record.append(record['resource'])
                 new_record.append(record['login'])
                 new_record.append(record['comment'])
+                new_record.append(record['project_id'])
                 # write row!
                 writer.writerow(new_record)
 

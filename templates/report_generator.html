@@ -1,9 +1,10 @@
 <html>
   <head>
     <title>Report Generation for Redmine Managers</title>
-    <link href='/static/css/main.css' rel="stylesheet" type="text/css" />
     <link rel='icon' type="image/ico" href="/static/img/report.ico" />
     <link rel="stylesheet" href="/static/css/daterangepicker.css" />
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link href='/static/css/main.css' rel="stylesheet" type="text/css" />
   </head>
 
   <body>
@@ -35,7 +36,7 @@
 	<span class="check_all"><input type="checkbox" id="check_all_box"/><label for="check_all_box"> All Projects</label></span>
 
 	<section class="date_selection">
-		Date Range: <input type="text" id="date_range" placeholder="Start Date - End Date" />
+		Date Range: <input type="text" id="date_range" style="color: black;" value="{{ date_range }}" placeholder="Start Date - End Date" />
 	</section>
 
 	<section class='generate'>
@@ -45,13 +46,16 @@
 	</section>
 
 	<script src="/static/js/jquery-3.2.1.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
 	<script language="javascript" src='/static/js/report_generator.js'></script>
     <script language="JavaScript" src="/static/js/moment.min.js"></script>
     <script language="JavaScript" src="/static/js/daterangepicker.js"></script>
 	<script language="javascript">
         $(document).ready(function(){
             $('#date_range').daterangepicker({
-                drops: 'up'
+                drops: 'up',
+                startDate: '{{ start }}',
+                endDate: '{{ end }}'
             });
 		init();
         });
