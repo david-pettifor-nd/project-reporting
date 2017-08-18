@@ -6,9 +6,19 @@ var expected = 0;
 
 function GetOverview()
 {
+	// billable hours
+			$("#billable_hours").html('Loading...');
+			// non-billable
+			$('#support_hours').html('Loading...');
+			// total
+			$('#total_hours').html('Loading...');
+			// expected
+			$('#expected').html('Loading...');
+	$('#expected_chart').html('<h3 style="width: 100%; text-align: center;">Loading...</h3>');
+
 	$.ajax({
 		url: '../get_all_entries',
-		data: {month: today.getMonth() + 1, year: today.getFullYear(), order: 'date', by: 'asc'},
+		data: {start: $('#date_range').val().split(' - ')[0], end: $('#date_range').val().split(' - ')[1], order: 'date', by: 'asc'},
 		dataType: 'json',
 		success: function(data){
 			// billable hours
@@ -99,9 +109,10 @@ function SetupExpected(data)
 
 function GetDistro()
 {
+	$('#chart').html('<h3 style="width: 100%; text-align: center;">Loading...</h3>');
 	$.ajax({
 		url: "../get_all_distribution",
-		data: {start_date: today.getFullYear() + '-' + (today.getMonth()+1) + '-01', end_date: today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate()},
+		data: {start_date: $('#date_range').val().split(' - ')[0], end_date: $('#date_range').val().split(' - ')[1]},
 		dataType: 'json',
 		success: function(data){
 			SetupChart(data, "Your time so far this month:");

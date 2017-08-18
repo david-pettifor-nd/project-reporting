@@ -11,7 +11,11 @@ from management.decorators import user_is_in_manager_group
 @login_required
 @user_is_in_manager_group
 def home(request):
-    return render(request, 'home.html', {})
+    # default to first of the month and today
+    end_date = datetime.datetime.now().today().strftime('%m/%d/%Y')
+    start_date = str(datetime.datetime.now().today().month) + '/' + str(1) + '/' + \
+                 str(datetime.datetime.now().today().year)
+    return render(request, 'home.html', {'start': start_date, 'end': end_date})
 
 
 @login_required
@@ -268,11 +272,17 @@ def get_entries_home_page(request):
     if request.user.is_staff and 'target' in request.GET and request.GET['target'] != '':
         target = request.GET['target']
 
-    # what is the month?
-    month = request.GET['month']
+    # what is the starting month?
+    month_start = request.GET['start'].split('/')[0]
 
-    # what is the year?
-    year = request.GET['year']
+    # what is the starting year?
+    year_start = request.GET['start'].split('/')[2]
+
+    # what is the ending month?
+    month_end = request.GET['end'].split('/')[0]
+
+    # what is the ending year?
+    year_end = request.GET['end'].split('/')[2]
 
     # connect to the database
     cur = connection.cursor()
@@ -299,18 +309,11 @@ def get_entries_home_page(request):
         "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
         "projects.id FROM time_entries INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
         "INNER JOIN projects ON projects.id = time_entries.project_id "
-        "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id WHERE time_entries.tyear = %(year)s "
-        "AND time_entries.tmonth = %(month)s AND custom_values.value != '' ORDER BY %(order)s;" % {
-            'month': month, 'year': year, 'user': target, 'order': order_by})
-
-    print cur.mogrify(
-        "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
-        "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
-        "projects.id FROM time_entries INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
-        "INNER JOIN projects ON projects.id = time_entries.project_id "
-        "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id WHERE time_entries.tyear = %(year)s "
-        "AND time_entries.tmonth = %(month)s ORDER BY %(order)s;" % {
-            'month': month, 'year': year, 'user': target, 'order': order_by})
+        "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id WHERE "
+        "time_entries.spent_on >= '%(start)s'::date AND time_entries.spent_on <= '%(end)s'::date "
+        "AND custom_values.value != '' ORDER BY %(order)s;" % {
+            'start': request.GET['start'], 'end': request.GET['end'],
+            'user': target, 'order': order_by})
 
     entries = cur.fetchall()
 
@@ -425,8 +428,7 @@ def get_entries_home_page(request):
     # get a list of users who have time logged for this month/year
     cur.execute(
         "SELECT firstname, lastname, login FROM users "
-        "ORDER BY login DESC, firstname, lastname;" % {
-            'month': month, 'year': year})
+        "ORDER BY login DESC, firstname, lastname;")
     users = cur.fetchall()
     # loop through the users, constructing a dictionary
     user_list = []
@@ -438,11 +440,11 @@ def get_entries_home_page(request):
 
     # if the month passed in is NOT this month, then "today" should be the last day of the month
     today = datetime.date.today()
-    if int(month) != datetime.date.today().month:
-        today = datetime.date(int(year), int(month), int(calendar.monthrange(int(year), int(month))[1]))
+    # if int(month) != datetime.date.today().month:
+    #     today = datetime.date(int(year), int(month), int(calendar.monthrange(int(year), int(month))[1]))
 
     # get a list of holidays for this year
-    holiday_list = get_holidays(int(year))
+    holiday_list = [] #get_holidays(int(year))
 
     # setup a count for all weekdays
     # (Monday = [0], Tuesday = [1], etc...)

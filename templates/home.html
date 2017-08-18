@@ -6,6 +6,7 @@
     <link href='/static/css/home.css' rel="stylesheet" type="text/css" />
     <link rel='icon' type="image/ico" href="/static/img/report.ico" />
     <link rel="shortcut icon" href="/static/img/report.ico" />
+    <link rel="stylesheet" href="/static/css/daterangepicker.css" />
 {% endblock %}
 
 {% block content %}
@@ -36,15 +37,34 @@
             </div>
         </div>
     </div>
+
+    <div class="row">
+        <div class="col-lg-6 col-lg-offset-3" style="text-align: center;">
+            <input type="text" class="form-control" style="display: inline-block; width: 60%;" placeholder="Date Range" value="{{ start }} - {{ end }}" id="date_range" />
+        </div>
+    </div>
 {% endblock %}
 
 {% block js_body %}
+    <script language="JavaScript" src="/static/js/moment.min.js"></script>
     <script language="javascript" src='/static/js/highcharts.js'></script>
 	<script language="javascript" src='/static/js/home.js'></script>
+    <script language="JavaScript" src="/static/js/daterangepicker.js"></script>
 	<script language="javascript">
+        $(document).ready(function(){
+           $('#date_range').daterangepicker({
+                   drops: 'up'
+               }).on('apply.daterangepicker', function(ev, picker){
+                   GetOverview();
+                   GetDistro();
+               });
+
+
+        });
 		// highlight the tab we're on
 		$('#home_link').toggleClass('selected_nav');
-		GetOverview();
-		GetDistro();
+
+        GetOverview();
+        GetDistro();
 	</script>
 {% endblock %}
