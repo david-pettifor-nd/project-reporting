@@ -419,7 +419,7 @@ def generate_internal_report(request):
                         "following into the email: <br> " + query)
                 new_record = {}
                 new_record['name'] = project_name  # Primary Comments
-                new_record['fopal'] = clean_fopal(fopal)  # Customer Account Number
+                new_record['fopal'] = '"'+clean_fopal(fopal) + '"'  # Customer Account Number
                 new_record['core_account_number'] = '3900314333340000' # Core Account Number (static for Turbo)
 
                 new_record['trans'] = day  # Transaction Date
