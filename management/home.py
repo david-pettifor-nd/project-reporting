@@ -626,31 +626,86 @@ def get_all_distribution(request):
 
 
     # get user and their total hours
-    query = "select distinct(project_id), projects.name, SUM(hours) FROM time_entries " \
-            "INNER JOIN projects ON time_entries.project_id = projects.id " \
-            "WHERE " \
-            "spent_on >= '%(start)s' and spent_on <= '%(end)s' group by project_id, projects.name;" % {
-            'start': request.GET['start_date'], 'end': request.GET['end_date']}
-    cur.execute(query)
+    # query = "select distinct(project_id), projects.name, SUM(hours) FROM time_entries " \
+    #         "INNER JOIN projects ON time_entries.project_id = projects.id " \
+    #         "WHERE " \
+    #         "spent_on >= '%(start)s' and spent_on <= '%(end)s' group by project_id, projects.name;" % {
+    #         'start': request.GET['start_date'], 'end': request.GET['end_date']}
+    # cur.execute(query)
+    cur.execute("SELECT id, name FROM projects WHERE "
+                "parent_id is NULL;")
 
-    records = cur.fetchall()
+    parents = cur.fetchall()
+    total_hours = 0.0
 
-    # get the total hours
-    query = "select SUM(hours) FROM time_entries INNER JOIN users ON time_entries.user_id = users.id " \
-            "WHERE spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
-                'start': request.GET['start_date'], 'end': request.GET['end_date']}
-    cur.execute(query)
-    total = cur.fetchone()[0]
+    parent_list = []
 
-    # loop through all records
-    entry_list = []
+    for parent_project in parents:
+        parent_obj = {
+            'id': parent_project[0],
+            'name': parent_project[1],
+            'subprojects': [],
+            'total_hours': 0.0,
+            'percent': 0.0
+        }
+        # get a list of all sub-projects
+        cur.execute("SELECT id, name FROM projects WHERE parent_id = %(parent)s or id = %(parent)s;" % {
+            'parent': parent_project[0]
+        })
 
-    for rec in records:
-        new_entry = {}
-        new_entry['id'] = rec[0]
-        new_entry['name'] = rec[1]
-        new_entry['hours'] = rec[2]
-        entry_list.append(new_entry)
+        sub_projects = cur.fetchall()
+        for sub_project in sub_projects:
+            s_obj = {
+                'id': sub_project[0],
+                'name': sub_project[1],
+                'total_hours': 0.0,
+                'percent': 0.0
+            }
 
-    context = {'entries': entry_list, 'total': total}
+            cur.execute("SELECT sum(hours) FROM time_entries WHERE project_id = %(project)s AND "
+                        "spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
+                'start': request.GET['start_date'],
+                'end': request.GET['end_date'],
+                'project': sub_project[0]
+            })
+            hours = cur.fetchone()
+            if hours[0] is not None or hours[0] > 0:
+                s_obj['total_hours'] = hours[0]
+                parent_obj['total_hours'] += hours[0]
+                total_hours += hours[0]
+
+            parent_obj['subprojects'].append(s_obj)
+
+        parent_list.append(parent_obj)
+
+    # now run through and calculate percentages
+    for parent in parent_list:
+        # set the parent's percentage
+        parent['percent'] = (float(parent['total_hours']) / float(total_hours) * 100.0)
+
+        # for each sub-project
+        for sub_project in parent['subprojects']:
+            sub_project['percent'] = (float(sub_project['total_hours']) / float(total_hours) * 100.0)
+
+        print parent['name'], parent['percent']
+
+
+    # # get the total hours
+    # query = "select SUM(hours) FROM time_entries INNER JOIN users ON time_entries.user_id = users.id " \
+    #         "WHERE spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
+    #             'start': request.GET['start_date'], 'end': request.GET['end_date']}
+    # cur.execute(query)
+    # total = cur.fetchone()[0]
+    #
+    # # loop through all records
+    # entry_list = []
+    #
+    # for rec in records:
+    #     new_entry = {}
+    #     new_entry['id'] = rec[0]
+    #     new_entry['name'] = rec[1]
+    #     new_entry['hours'] = rec[2]
+    #     entry_list.append(new_entry)
+
+    context = {'entries': parent_list, 'total': total_hours}
     return HttpResponse(json.dumps(context))
