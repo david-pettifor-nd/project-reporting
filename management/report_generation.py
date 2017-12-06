@@ -368,7 +368,7 @@ def generate_internal_report(request):
                 "inner join custom_fields on custom_fields.id = custom_values.custom_field_id "
                 "inner join projects on projects.id = time_entries.project_id "
                 "inner join enumerations on enumerations.id = time_entries.activity_id "
-                "where (time_entries.project_id = %(project_id)s or time_entries.project_id = any(childlist(%(project_id)s))) "
+                "where (time_entries.project_id = %(project_id)s ) "
                 "and custom_values.value != '' "
                 "and time_entries.spent_on >= '%(start)s'::date and time_entries.spent_on <= '%(end)s'::date "
                 "and lower(enumerations.name) not like '%%non%%billable' "
