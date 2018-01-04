@@ -93,7 +93,7 @@ def get_good_friday(year):
 
     # now that we have Easter, Good Friday is just 2 days prior!
     holiday = {}
-    holiday['date'] = datetime.date(year, month, day - 2)
+    holiday['date'] = datetime.date(year, month, day) - datetime.timedelta(days=2)
     holiday['name'] = 'Good Friday'
     return holiday
 
