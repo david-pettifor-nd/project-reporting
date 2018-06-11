@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+from holidays import get_holidays
+import datetime
+import psycopg2
+
+
+def log_holiday(date, name):
+    print "Connecting..."
+    connection = psycopg2.connect(
+        host='localhost',
+        user='redmine_system',
+        password='Lets go turbo!',
+        database='redmine_default'
+    )
+    cursor = connection.cursor()
+    # get the project ID for "University Holidays"
+    cursor.execute("SELECT id FROM projects WHERE name= 'University Holidays';")
+    project_id = cursor.fetchone()[0]
+
+    # get a list of users we need to log time for
+    cursor.execute("SELECT user_id FROM members WHERE project_id = %(id)s;" % {'id': project_id})
+    members = cursor.fetchall()
+
+    for member in members:
+        cursor.execute("INSERT INTO time_entries (project_id, user_id, hours, comments, activity_id, spent_on, tyear, "
+                       "tmonth, tweek, created_on, updated_on) VALUES (%(project_id)s, %(user_id)s, 8, "
+                       "'%(holiday_name)s', 98, '%(date)s'::date, %(year)s, %(month)s, %(week)s, now(), now());" % {
+            'project_id': project_id,
+            'user_id': member[0],
+            'holiday_name': name,
+            'date': date.strftime('%Y-%m-%d'),
+            'year': date.strftime('%Y'),
+            'month': date.strftime('%m'),
+            'week': (((datetime.datetime.combine(date, datetime.datetime.min.time()) - datetime.datetime(date.year,1,1)).days // 7) + 1)
+        })
+    connection.commit()
+
+
+if __name__ == '__main__':
+    holidays = get_holidays(datetime.datetime.now().year)
+
+    for date in holidays:
+        if datetime.datetime.now().date() == date['date']:
+            log_holiday(date['date'], date['name'])
