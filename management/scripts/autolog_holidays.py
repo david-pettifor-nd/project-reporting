@@ -45,4 +45,5 @@ if __name__ == '__main__':
 
     for date in holidays:
         if datetime.datetime.now().date() == date['date']:
+            print "Logging time for:", date['name']
             log_holiday(date['date'], date['name'])
