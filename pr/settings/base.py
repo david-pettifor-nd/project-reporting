@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'management',
+    'time_management',
     'django_extensions',
     #'skillsmatrix.apps.SkillsmatrixConfig',
     # used on prod for CAS authentication

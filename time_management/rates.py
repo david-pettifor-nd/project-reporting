@@ -2,7 +2,7 @@ from django.db import connection
 from django.shortcuts import render, HttpResponse
 import datetime
 from pr.settings.base import LOGGING_CATEGORY_NAME
-from management.decorators import user_is_in_manager_group
+from time_management.decorators import user_is_in_manager_group
 from django.contrib.auth.decorators import login_required
 
 

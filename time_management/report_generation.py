@@ -6,7 +6,7 @@ import calendar  # used for converting month integers to text
 import csv
 import costs
 from django.contrib.auth.decorators import login_required
-from management.decorators import user_is_in_manager_group
+from time_management.decorators import user_is_in_manager_group
 
 
 class RedmineProject:

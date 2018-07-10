@@ -3,7 +3,7 @@ from django.db import connection
 import json
 
 from django.contrib.auth.decorators import login_required
-from management.decorators import user_is_in_manager_group
+from time_management.decorators import user_is_in_manager_group
 
 @login_required
 @user_is_in_manager_group
