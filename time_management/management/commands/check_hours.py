@@ -86,7 +86,9 @@ def send_notification(to_email, cc_list, message_body, message_subject):
     msg['To'] = to_email
     if cc_list:
         msg['Cc'] = cc_list
-    list_of_recipients = [to_email].extend(cc_list)
+        list_of_recipients = to_email + cc_list
+    else:
+        list_of_recipients = [to_email]
 
     # Send the message via our own SMTP server, but don't include the
     # envelope header.
