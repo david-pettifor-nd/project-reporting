@@ -17,19 +17,19 @@ from django.conf.urls import url
 from django.contrib import admin
 from django.conf.urls import include
 
-from management.planning import planning_home, get_all_dev_assignments, get_assignments, get_planning_projection, \
+from time_management.planning import planning_home, get_all_dev_assignments, get_assignments, get_planning_projection, \
     developer_assignments, deactivate, activate, update_supervisor, remove_assignment, add_assignment
 
-from management.home import home, get_entries_home, get_distribution, get_entries_home_page, get_all_distribution
-from management.time_entries import entries_home, get_date_range, get_project_activities, update_entries, delete_entry
-from management.calendar_view import calendar_home, update_entry_data, copy_entry
-from management.distribution import distribution_home, get_entries
-from management.report_generation import report_generator_home, generate_external_report, \
+from time_management.home import home, get_entries_home, get_distribution, get_entries_home_page, get_all_distribution
+from time_management.time_entries import entries_home, get_date_range, get_project_activities, update_entries, delete_entry
+from time_management.calendar_view import calendar_home, update_entry_data, copy_entry
+from time_management.distribution import distribution_home, get_entries
+from time_management.report_generation import report_generator_home, generate_external_report, \
     generate_csr_report, generate_internal_report, missing_hours
-from management.reports import weekly_report_form_url
-from management.rates import rates_home, save_rate, save_start_date, save_end_date, save_rates, delete_rates, \
+from time_management.reports import weekly_report_form_url
+from time_management.rates import rates_home, save_rate, save_start_date, save_end_date, save_rates, delete_rates, \
     add_rates, add_single_category
-from management.auth import login_page, logout_request
+from time_management.auth import login_page, logout_request
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
