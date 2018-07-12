@@ -48,14 +48,41 @@ class Command(BaseCommand):
                 print "Sending email to", user[0], "for low hours:", hours
 
                 if options['type'] == 'monday_morning':
-                    email_address = 'dpettifo@nd.edu'
                     message = open('templates/notification_emails/monday_morning.html', 'r').read()
-                    send_notification(email_address, ['noctemowl@gmail.com'], message, 'Redmine: Low Hours Reminder')
+                    send_notification(email_address, None, message, 'Redmine: Low Hours Reminder')
 
-        print low_hours_count, "/", len(user_list), "had low hours"
+                if options['type'] == 'monday_afternoon':
+                    message = open('templates/notification_emails/monday_afternoon.html', 'r').read()
 
+                    # get a list of supervisors to CC this time
+                    cursor.execute("SELECT value FROM custom_values WHERE customized_id = %(user_id)s AND custom_field_id = %(field_id)s;" % {
+                        'user_id': user[0],
+                        'field_id': custom_field_id
+                    })
+                    supervisors = cursor.fetchall()
+                    supervisor_list = []
+                    for supervisor in supervisors:
+                        supervisor_list.append(supervisor[0])
+                    if len(supervisor_list) > 0:
+                        send_notification(email_address, supervisor_list, message, 'Redmine: Low Hours Reminder')
+                if options['type'] == 'tuesday_morning':
+                    message = open('templates/notification_emails/tuesday_morning.html', 'r').read()
 
-            # self.stdout.write(self.style.SUCCESS('Successfully closed poll "%s"' % poll_id))
+                    # get a list of supervisors to CC this time
+                    cursor.execute("SELECT value FROM custom_values WHERE customized_id = %(user_id)s AND custom_field_id = %(field_id)s;" % {
+                        'user_id': user[0],
+                        'field_id': custom_field_id
+                    })
+                    supervisors = cursor.fetchall()
+                    supervisor_list = []
+                    for supervisor in supervisors:
+                        supervisor_list.append(supervisor[0])
+                    if len(supervisor_list) > 0:
+                        send_notification(email_address, supervisor_list, message, 'Redmine: Low Hours Reminder')
+
+        # print low_hours_count, "/", len(user_list), "had low hours"
+        self.stdout.write(self.style.SUCCESS(options['type']+' '+str(low_hours_count) + ' of '+str(len(user_list))+' had low hours.' % poll_id))
+
 
 def get_last_date_range():
     today = datetime.date.today()
