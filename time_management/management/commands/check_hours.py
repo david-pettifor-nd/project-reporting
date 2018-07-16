@@ -45,6 +45,12 @@ class Command(BaseCommand):
             # check hours
             if hours is None or hours < 40:
                 low_hours_count += 1
+                cursor.execute("SELECT address FROM email_addresses WHERE user_id = %(user)s AND is_default=TRUE LIMIT 1;" % {'user': user[0]})
+                email_address = cursor.fetchone()
+                if email_address is not None:
+                    email_address = email_address[0]
+                else:
+                    continue
                 print "Sending email to", user[0], "for low hours:", hours
 
                 if options['type'] == 'monday_morning':
