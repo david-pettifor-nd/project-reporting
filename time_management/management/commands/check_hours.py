@@ -48,11 +48,11 @@ class Command(BaseCommand):
                 print "Sending email to", user[0], "for low hours:", hours
 
                 if options['type'] == 'monday_morning':
-                    message = open('templates/notification_emails/monday_morning.html', 'r').read()
+                    message = open('/opt/turbomachinery/templates/notification_emails/monday_morning.html', 'r').read()
                     send_notification(email_address, None, message, 'Redmine: Low Hours Reminder')
 
                 if options['type'] == 'monday_afternoon':
-                    message = open('templates/notification_emails/monday_afternoon.html', 'r').read()
+                    message = open('/opt/turbomachinery/templates/notification_emails/monday_afternoon.html', 'r').read()
 
                     # get a list of supervisors to CC this time
                     cursor.execute("SELECT value FROM custom_values WHERE customized_id = %(user_id)s AND custom_field_id = %(field_id)s;" % {
@@ -66,7 +66,7 @@ class Command(BaseCommand):
                     if len(supervisor_list) > 0:
                         send_notification(email_address, supervisor_list, message, 'Redmine: Low Hours Reminder')
                 if options['type'] == 'tuesday_morning':
-                    message = open('templates/notification_emails/tuesday_morning.html', 'r').read()
+                    message = open('/opt/turbomachinery/templates/notification_emails/tuesday_morning.html', 'r').read()
 
                     # get a list of supervisors to CC this time
                     cursor.execute("SELECT value FROM custom_values WHERE customized_id = %(user_id)s AND custom_field_id = %(field_id)s;" % {
