@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
 
 
-        cursor.execute("SELECT distinct(customized_id) FROM custom_values WHERE custom_field_id = %(custom_field_id)s;" % {
+        cursor.execute("SELECT distinct(customized_id) FROM custom_values INNER JOIN users ON users.id = customized_id WHERE users.status = 1 and custom_field_id = %(custom_field_id)s;" % {
             'custom_field_id': custom_field_id
         })
 
@@ -87,7 +87,7 @@ class Command(BaseCommand):
                         send_notification(email_address, supervisor_list, message, 'Redmine: Low Hours Reminder')
 
         # print low_hours_count, "/", len(user_list), "had low hours"
-        self.stdout.write(self.style.SUCCESS(options['type']+' '+str(low_hours_count) + ' of '+str(len(user_list))+' had low hours.' % poll_id))
+        self.stdout.write(self.style.SUCCESS(options['type']+' '+str(low_hours_count) + ' of '+str(len(user_list))+' had low hours.'''))
 
 
 def get_last_date_range():
