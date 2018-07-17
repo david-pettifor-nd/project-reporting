@@ -38,12 +38,42 @@ class Command(BaseCommand):
         user_list = cursor.fetchall()
         low_hours_count = 0
         for user in user_list:
+            # get a list of supervisors to CC this time
+            cursor.execute(
+                "SELECT value FROM custom_values WHERE customized_id = %(user_id)s AND custom_field_id = %(field_id)s;" % {
+                    'user_id': user[0],
+                    'field_id': custom_field_id
+                })
+            supervisors = cursor.fetchall()
+            supervisor_list = []
+            for supervisor in supervisors:
+                if supervisor[0] != '':
+                    supervisor_list.append(supervisor[0])
+
+            if len(supervisor_list) == 0:
+                continue
+
             hours = get_hours(user_id=user[0],
                               start_date=dateframe['saturday'],
                               end_date=dateframe['friday'],
                               cursor=cursor)
+
+            # get the expected hours (first check if there is a value defined, otherwise use the default)
+            cursor.execute("SELECT id, default_value FROM custom_fields WHERE type = 'UserCustomField' and name = 'Minimum Weekly Hours Required';")
+            min_hours_record = cursor.fetchone()
+
+            cursor.execute("SELECT value FROM custom_values WHERE custom_field_id = %(min_hours_id)s AND customized_id = %(user_id)s;" % {
+                'user_id': user[0],
+                'min_hours_id': min_hours_record[0]
+            })
+            users_requirements = cursor.fetchone()
+
+            hours_required = int(min_hours_record[1])
+            if users_requirements is not None:
+                hours_required = int(users_requirements[0])
+
             # check hours
-            if hours is None or hours < 40:
+            if hours is None or hours < hours_required:
                 low_hours_count += 1
                 cursor.execute("SELECT address FROM email_addresses WHERE user_id = %(user)s AND is_default=TRUE LIMIT 1;" % {'user': user[0]})
                 email_address = cursor.fetchone()
@@ -51,40 +81,21 @@ class Command(BaseCommand):
                     email_address = email_address[0]
                 else:
                     continue
-                print "Sending email to", user[0], "for low hours:", hours
+                # print "Sending email to", user[0], "for low hours:", hours
 
                 if options['type'] == 'monday_morning':
-                    message = open('/opt/turbomachinery/templates/notification_emails/monday_morning.html', 'r').read()
-                    send_notification(email_address, None, message, 'Redmine: Low Hours Reminder')
+                    print "sending email to", email_address, "for", hours, "<", hours_required
+                    print supervisor_list
+                    #message = open('/opt/turbomachinery/templates/notification_emails/monday_morning.html', 'r').read()
+                    #send_notification(email_address, None, message, 'Redmine: Low Hours Reminder')
 
                 if options['type'] == 'monday_afternoon':
                     message = open('/opt/turbomachinery/templates/notification_emails/monday_afternoon.html', 'r').read()
+                    send_notification(email_address, supervisor_list, message, 'Redmine: Low Hours Reminder')
 
-                    # get a list of supervisors to CC this time
-                    cursor.execute("SELECT value FROM custom_values WHERE customized_id = %(user_id)s AND custom_field_id = %(field_id)s;" % {
-                        'user_id': user[0],
-                        'field_id': custom_field_id
-                    })
-                    supervisors = cursor.fetchall()
-                    supervisor_list = []
-                    for supervisor in supervisors:
-                        supervisor_list.append(supervisor[0])
-                    if len(supervisor_list) > 0:
-                        send_notification(email_address, supervisor_list, message, 'Redmine: Low Hours Reminder')
                 if options['type'] == 'tuesday_morning':
                     message = open('/opt/turbomachinery/templates/notification_emails/tuesday_morning.html', 'r').read()
-
-                    # get a list of supervisors to CC this time
-                    cursor.execute("SELECT value FROM custom_values WHERE customized_id = %(user_id)s AND custom_field_id = %(field_id)s;" % {
-                        'user_id': user[0],
-                        'field_id': custom_field_id
-                    })
-                    supervisors = cursor.fetchall()
-                    supervisor_list = []
-                    for supervisor in supervisors:
-                        supervisor_list.append(supervisor[0])
-                    if len(supervisor_list) > 0:
-                        send_notification(email_address, supervisor_list, message, 'Redmine: Low Hours Reminder')
+                    send_notification(email_address, supervisor_list, message, 'Redmine: Low Hours Reminder')
 
         # print low_hours_count, "/", len(user_list), "had low hours"
         self.stdout.write(self.style.SUCCESS(options['type']+' '+str(low_hours_count) + ' of '+str(len(user_list))+' had low hours.'''))
