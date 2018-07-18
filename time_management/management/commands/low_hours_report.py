@@ -4,6 +4,12 @@ import psycopg2
 import csv
 import os
 import subprocess
+# Import the email modules we'll need
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.utils import COMMASPACE, formatdate
+from email.mime.application import MIMEApplication
+import smtplib
 
 
 REPORT_TO_LIST = ['dpettifo@nd.edu']
