@@ -24,7 +24,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Everyone had their hours in!'))
 
         # get the offenders row template
-        offender_template = open('templates/reports/low_hours_row.tex', 'r')
+        offender_template = open('/opt/turbomachinery/templates/reports/low_hours_row.tex', 'r')
         row_template = offender_template.read()
         offender_template.close()
 
@@ -34,7 +34,7 @@ class Command(BaseCommand):
             table_contents += next_row + '\n'
 
         # get the full tex document
-        tex_template = open('templates/reports/low_hours_template.tex', 'r')
+        tex_template = open('/opt/turbomachinery/templates/reports/low_hours_template.tex', 'r')
         tex_contents = tex_template.read()
         tex_template.close()
 
