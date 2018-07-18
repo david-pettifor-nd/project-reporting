@@ -1,0 +1,20 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\begin{document}
+\LARGE Redmine Low-Hours Report \normalsize --- {{ current_date }} \newline
+\par The list below shows individuals who have fallen short on their logged hours this past week ({{ start_date }} - {{ end_date }}).
+\vspace{5mm}
+\newline
+\begin{tabular}{|c|c|c|c|}
+\hline
+     \textbf{Name} & \textbf{Email} & \textbf{Hours Expected} & \textbf{Hours Logged}  \\ \hline
+       {{ offenders_list }}
+\end{tabular}
+
+
+\begin{center}
+    \footnotesize{This document was generated using data as of {{ timestamp }}}
+\end{center}
+
+\end{document}
