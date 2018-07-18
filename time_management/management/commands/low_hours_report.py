@@ -20,8 +20,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         date_range = get_last_date_range()
         offenders = get_offending_users()
-        if len(offenders):
+        if len(offenders) == 0:
             self.stdout.write(self.style.SUCCESS('Everyone had their hours in!'))
+            return
 
         # get the offenders row template
         offender_template = open('/opt/turbomachinery/templates/reports/low_hours_row.tex', 'r')
