@@ -80,9 +80,9 @@ class Command(BaseCommand):
         smtp = smtplib.SMTP('localhost')
         smtp.sendmail('noreply@turbo.crc.nd.edu', [message['email']], msg.as_string())
 
-    smtp.close()
+        smtp.close()
 
-        # self.stdout.write(self.style.SUCCESS('Successfully added %s supervisor assignments.' % total_adds))
+        self.stdout.write(self.style.SUCCESS('Sent email of offending users. (%s users with low hours)' % len(offenders)))
 
 
 def get_offending_users():
