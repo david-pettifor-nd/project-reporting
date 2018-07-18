@@ -78,7 +78,7 @@ class Command(BaseCommand):
         msg.attach(part)
 
         smtp = smtplib.SMTP('localhost')
-        smtp.sendmail('noreply@turbo.crc.nd.edu', [message['email']], msg.as_string())
+        smtp.sendmail('noreply@turbo.crc.nd.edu', REPORT_TO_LIST, msg.as_string())
 
         smtp.close()
 
