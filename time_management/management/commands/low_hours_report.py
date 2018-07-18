@@ -12,7 +12,7 @@ from email.mime.application import MIMEApplication
 import smtplib
 
 
-REPORT_TO_LIST = ['dpettifo@nd.edu']
+REPORT_TO_LIST = ['Beata.Nabrzyska.1@nd.edu', 'Jessica.Reyes.50@nd.edu']
 
 class Command(BaseCommand):
     help = 'Generates a PDF report of individuals who fall under their minimum required hours and sends them out to the list of supervisors.'
