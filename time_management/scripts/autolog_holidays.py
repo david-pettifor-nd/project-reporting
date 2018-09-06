@@ -41,9 +41,27 @@ def log_holiday(date, name):
 
 
 if __name__ == '__main__':
+
     holidays = get_holidays(datetime.datetime.now().year)
 
-    for date in holidays:
-        if datetime.datetime.now().date() == date['date']:
-            print "Logging time for:", date['name']
-            log_holiday(date['date'], date['name'])
+    # check if a specific holiday was given
+    found = False
+    if len(sys.argv) > 1:
+        possible_holidays = []
+        target_holiday = sys.argv[1]
+        for holiday in holidays:
+            if "'"+holiday['name']+"'" not in possible_holidays:
+                possible_holidays.append("'"+holiday['name']+"'")
+            if target_holiday == holiday['name']:
+                found = True
+                log_holiday(holiday['date'], holiday['name'])
+        if not found:
+            print("Failed to find matching holiday.  Holiday name should match one of the following:")
+            for holiday in possible_holidays:
+                print(holiday)
+
+    else:
+        for date in holidays:
+            if datetime.datetime.now().date() == date['date']:
+                print "Logging time for:", date['name']
+                log_holiday(date['date'], date['name'])
