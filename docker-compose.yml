@@ -1,0 +1,37 @@
+version: '3'
+
+volumes:
+    pgdata:
+
+services:
+    db:
+        image: redmine_db
+        ports:
+            - 127.0.0.1:5432:5432
+        environment:
+            DATABASE_USER: 'redmine'
+            DATABASE_PASSWORD: 'redminepass'
+            DATABASE_NAME: 'redmine'
+        volumes:
+            - pgdata:/var/lib/postgresql/data   # <- important!  the `/var/lib/postgresql/data` mounting point for your container is where postgresql's default data location is!
+    redmine:
+        image: redmine
+        ports:
+            - 127.0.0.1:8080:3000
+        restart: always
+        environment:
+          REDMINE_DB_POSTGRES: db
+          REDMINE_DB_DATABASE: 'redmine'
+          REDMINE_DB_USER: 'redmine'
+          REDMINE_DB_PASSWORD: 'redminepass'
+
+    web:
+        image: reports:latest
+        ports:
+          - 127.0.0.1:8000:8000
+        volumes:
+          - .:/code/     # <- the first "." is the local directory that will be mounted to the location defined after the ":" (/svr/)
+        depends_on:
+          - db
+        links:
+          - "db:database"
