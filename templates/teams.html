@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Team Management{% endblock %}
+
+{% block css %}
+    <link href='/static/css/visualize.css' rel="stylesheet" type="text/css" />
+    <link rel='icon' type="image/ico" href="/static/img/report.ico" />
+    <link rel="shortcut icon" href="/static/img/report.ico" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/vis/3.11.0/vis.min.css" />
+    <link rel="stylesheet" href="/static/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/css/bootstrap-datepicker3.min.css" type="text/css" />
+    <link rel="stylesheet" href="/static/css/planning.css" type="text/css" />
+{% endblock %}
+
+{% block content %}
+    <div class="row" style="margin-left: 20px; margin-right: 20px;">
+    <div class="col-lg-4">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                Teams
+            </div>
+            <div class="panel-body">
+                {% include 'team_list.html' %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                Team Members
+            </div>
+            <div class="panel-body" id="team_display">
+                Select a team.
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <div id="team_template" style="display: none;">
+        <div class="row">
+            <div class="col-lg-12">
+                <label>Manager:</label>
+                <select class="manager-select">
+                    {% for user in users %}
+                    <option value="{{ user.id }}">{{ user }}</option>
+                    {% endfor %}
+                </select>
+            <button class="btn btn-success btn-sm save-manager-button" style="margin-left: 10px; position: relative; top: -2px;">SAVE MANAGER</button>
+            </div>
+        </div>
+        <br />
+        <br />
+        <div class="row">
+            <div class="col-lg-12">
+                <ul class="list-group team-list">
+                </ul>
+            </div>
+        </div>
+
+        <br />
+        <br />
+        <div class="row">
+            <div class="col-lg-12">
+                <label>Add Member:</label>
+                <select class="new-member-select">
+                    {% for user in users %}
+                    <option id="{{ user.id }}">{{ user }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-success btn-sm" style="margin-left: 10px; position: relative; top: -2px;"><i class="fa fa-plus"></i></button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js_body %}
+{#	<script language="javascript" src='/media/js/jquery-1.8.2.min.js'></script>#}
+    <script src="/static/js/jquery-ui.js" integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E=" crossorigin="anonymous"></script>
+        <script language="javascript" src='/static/js/vis.js'></script>
+	<script language="javascript" src='/static/js/bootstrap-datepicker.min.js'></script>
+	{% if user.is_superuser %}
+	<script language="javascript">
+    function update_selected_team(team_info, selected_item){
+         $('.team_item.active').each(function(){
+               $(this).removeClass('active');
+           });
+
+           $(selected_item).addClass('active');
+
+            var team_div = $('#team_template').clone(true);
+            $(team_div).find('.team-list').html('');
+
+
+           for(var i = 0; i < team_info.members.length; i++){
+              var li = document.createElement("li");
+              $(li).addClass("list-group-item team-member-item");
+              $(li).html(team_info.members[i].name);
+              $(li).attr('data-id', team_info.members[i].id);
+
+              var rm_btn = document.createElement("button");
+              $(rm_btn).addClass('btn btn-danger btn-sm').html('<i class="fa fa-remove"></i>')
+                  .css("float", "right").attr("title", "Remove from team")
+                  .attr('data-id', team_info.members[i].id);
+
+              $(li).append(rm_btn);
+
+              $(team_div).find('.team-list').append(li);
+           }
+
+           $(team_div).find('.manager-select').attr('id', 'active_manager');
+            $(team_div).find('.manager-select').val(team_info.manager.id);
+            $('#team_display').html('').append(team_div);
+            $(team_div).show();
+    }
+
+        $(document).ready(function(){
+           $('.team_item').click(function(){
+               var manager_id = $(this).attr('data-manager');
+               var selected_item = this;
+
+               $.ajax({
+                   url: '../get_team',
+                   data: {'manager': manager_id},
+                   dataType: 'json',
+                   success: function(team_info){
+                        update_selected_team(team_info, selected_item);
+
+                   }
+               });
+
+           });
+
+           $('.save-manager-button').click(function(){
+               var members = [];
+               $('.team-member-item').each(function(){
+                   members.push($(this).attr('data-id'));
+               });
+
+               $.ajax({
+                   url: '../save_manager',
+                   data: {'members': members, 'manager': $('#active_manager').val()},
+                   dataType: 'json',
+                   success: function(data){
+                       alert("Saved successfully!");
+                       var selected_item = $('.team_item.active');
+                        update_selected_team(data, selected_item);
+                        // make sure to update the manager name on the left
+                       $(selected_item).find('.manager-name').html(data.manager.name);
+                   }
+               });
+           });
+        });
+	</script>
+	{% endif %}
+{% endblock %}

@@ -24,9 +24,13 @@
             <li><a href="{% url 'calendar' %}">Calendar</a></li>
             <li><a href="{% url 'distribution' %}">Time Distribution</a></li>
 	    {% if user.is_staff %}
-            <li><a href="{% url 'planning_home' %}">Planning</a></li>
+{#            <li><a href="{% url 'planning_home' %}">Planning</a></li>#}
             <li><a href="{% url 'rates_home' %}">Rates</a></li>
             <li><a href="{% url 'report_generator' %}">CORES Report</a></li>
+        {% endif %}
+
+        {% if user.is_superuser %}
+        <li><a href="{% url 'team_management' %}">Team Management</a></li>
         {% endif %}
         </ul>
     </div>
