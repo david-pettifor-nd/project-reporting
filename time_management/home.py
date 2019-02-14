@@ -9,7 +9,7 @@ from time_management.decorators import user_is_in_manager_group
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def home(request):
     # default to first of the month and today
     end_date = datetime.datetime.now().today().strftime('%m/%d/%Y')
@@ -19,7 +19,7 @@ def home(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_entries_home(request):
     """
         Generates the landing page for anyone to come to for them to change/modify
@@ -260,13 +260,13 @@ def get_entries_home(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_entries_home_page(request):
     """
         Generates the landing page for anyone to come to for them to change/modify
         their hours.  It allows for users to move hours from project to project.
         """
-    print "HEY"
+
     # target
     target = request.user.username
     if request.user.is_staff and 'target' in request.GET and request.GET['target'] != '':
@@ -304,16 +304,33 @@ def get_entries_home_page(request):
         order_by = 'enumerations.name ' + order + ', projects.name ASC, time_entries.spent_on ASC'
 
     # get the records for this user, month, and year
-    cur.execute(
-        "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
-        "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
-        "projects.id FROM time_entries INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
-        "INNER JOIN projects ON projects.id = time_entries.project_id "
-        "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id WHERE "
-        "time_entries.spent_on >= '%(start)s'::date AND time_entries.spent_on <= '%(end)s'::date "
-        "AND custom_values.value != '' ORDER BY %(order)s;" % {
-            'start': request.GET['start'], 'end': request.GET['end'],
-            'user': target, 'order': order_by})
+    if request.user.is_staff:
+        cur.execute(
+            "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
+            "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
+            "projects.id FROM time_entries "
+            "INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
+            "INNER JOIN projects ON projects.id = time_entries.project_id "
+            "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id "
+            "WHERE "
+            "time_entries.spent_on >= '%(start)s'::date AND time_entries.spent_on <= '%(end)s'::date "
+            "AND custom_values.value != '' ORDER BY %(order)s;" % {
+                'start': request.GET['start'], 'end': request.GET['end'],
+                'user': target, 'order': order_by})
+    else:
+        cur.execute(
+            "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
+            "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
+            "projects.id FROM time_entries "
+            "INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
+            "INNER JOIN projects ON projects.id = time_entries.project_id "
+            "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id "
+            "INNER JOIN users ON time_entries.user_id = users.id WHERE "
+            "time_entries.spent_on >= '%(start)s'::date AND time_entries.spent_on <= '%(end)s'::date "
+            "AND users.login = '%(user)s' "
+            "AND custom_values.value != '' ORDER BY %(order)s;" % {
+                'start': request.GET['start'], 'end': request.GET['end'],
+                'user': target, 'order': order_by})
 
     entries = cur.fetchall()
 
@@ -496,7 +513,7 @@ def get_entries_home_page(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_distribution(request):
     # connect to the database
     cur = connection.cursor()
@@ -612,7 +629,7 @@ def get_distribution(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_all_distribution(request):
     # connect to the database
     cur = connection.cursor()
@@ -632,8 +649,16 @@ def get_all_distribution(request):
     #         "spent_on >= '%(start)s' and spent_on <= '%(end)s' group by project_id, projects.name;" % {
     #         'start': request.GET['start_date'], 'end': request.GET['end_date']}
     # cur.execute(query)
-    cur.execute("SELECT id, name FROM projects WHERE "
-                "parent_id is NULL;")
+
+    if request.user.is_staff:
+        cur.execute("SELECT id, name FROM projects WHERE "
+                    "parent_id is NULL;")
+    else:
+        cur.execute("SELECT projects.id, projects.name FROM projects "
+                    "INNER JOIN members ON projects.id = members.project_id "
+                    "INNER JOIN users ON users.id = members.user_id "
+                    "WHERE users.login = '%(user)s' AND "
+                    "parent_id is NULL;" % {'user': request.user.username})
 
     parents = cur.fetchall()
     total_hours = 0.0
@@ -662,12 +687,24 @@ def get_all_distribution(request):
                 'percent': 0.0
             }
 
-            cur.execute("SELECT sum(hours) FROM time_entries WHERE project_id = %(project)s AND "
-                        "spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
-                'start': request.GET['start_date'],
-                'end': request.GET['end_date'],
-                'project': sub_project[0]
-            })
+            if request.user.is_staff:
+                cur.execute("SELECT sum(hours) FROM time_entries WHERE project_id = %(project)s AND "
+                            "spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
+                    'start': request.GET['start_date'],
+                    'end': request.GET['end_date'],
+                    'project': sub_project[0]
+                })
+            else:
+                cur.execute("SELECT sum(hours) FROM time_entries "
+                            "INNER JOIN users ON time_entries.user_id = users.id "
+                            "WHERE project_id = %(project)s AND "
+                            "spent_on >= '%(start)s' and spent_on <= '%(end)s' "
+                            "AND users.login = '%(user)s';" % {
+                                'start': request.GET['start_date'],
+                                'end': request.GET['end_date'],
+                                'project': sub_project[0],
+                                'user': request.user.username
+                            })
             hours = cur.fetchone()
             if hours[0] is not None or hours[0] > 0:
                 s_obj['total_hours'] = hours[0]
@@ -681,13 +718,18 @@ def get_all_distribution(request):
     # now run through and calculate percentages
     for parent in parent_list:
         # set the parent's percentage
-        parent['percent'] = (float(parent['total_hours']) / float(total_hours) * 100.0)
+        if total_hours > 0:
+            parent['percent'] = (float(parent['total_hours']) / float(total_hours) * 100.0)
 
-        # for each sub-project
-        for sub_project in parent['subprojects']:
-            sub_project['percent'] = (float(sub_project['total_hours']) / float(total_hours) * 100.0)
+            # for each sub-project
+            for sub_project in parent['subprojects']:
+                sub_project['percent'] = (float(sub_project['total_hours']) / float(total_hours) * 100.0)
 
-        print parent['name'], parent['percent']
+            print parent['name'], parent['percent']
+        else:
+            parent['percent'] = 100.0
+            for sub_project in parent['subprojects']:
+                sub_project['percent'] = 0.0
 
 
     # # get the total hours

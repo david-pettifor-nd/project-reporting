@@ -8,13 +8,13 @@ from time_management.decorators import user_is_in_manager_group
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def entries_home(request):
     return render(request, 'time_entries.html', {})
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_date_range(request):
     cur = connection.cursor()
 
@@ -54,7 +54,7 @@ def get_date_range(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_project_activities(request):
     project = request.GET['project']
 
@@ -89,7 +89,7 @@ def get_project_activities(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def update_entries(request):
     # grab our list of entries to update
     entries = json.loads(request.GET['entries'])
@@ -207,7 +207,7 @@ def update_entries(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def delete_entry(request):
     # grab our list of entries to update
     entry = json.loads(request.GET['entry'])

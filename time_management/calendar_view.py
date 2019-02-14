@@ -7,13 +7,13 @@ from time_management.decorators import user_is_in_manager_group
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def calendar_home(request):
     return render(request, 'calendar.html', {})
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def update_entry_data(request):
     # grab their username
     user = request.user.username
@@ -58,7 +58,7 @@ def update_entry_data(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def copy_entry(request):
     # grab their username
     user = request.user.username
