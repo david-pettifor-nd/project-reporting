@@ -28,7 +28,16 @@ class RedmineUser(models.Model):
         return self.firstname + ' ' + self.lastname
 
 
-class TeamMember(models.Model):
+class Team(models.Model):
     manager = models.ForeignKey(RedmineUser, related_name='redmineuser_manager')
 
+    def __unicode__(self):
+        return str(self.manager)
+
+
+class TeamMember(models.Model):
+    team = models.ForeignKey(Team, related_name='team_teammember', null=True, blank=True)
     member = models.ForeignKey(RedmineUser, related_name='redmineuser_teammember')
+
+    def __unicode__(self):
+        return str(self.team) + ': ' + str(self.member)

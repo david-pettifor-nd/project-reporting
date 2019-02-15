@@ -18,6 +18,7 @@
         <div class="panel panel-info">
             <div class="panel-heading">
                 Teams
+                <button class="btn btn-success btn-sm add-team-btn" data-toggle="modal" data-target="#new_team_modal" style="position: relative; float: right; top: -5px;">ADD TEAM</button>
             </div>
             <div class="panel-body">
                 {% include 'team_list.html' %}
@@ -28,7 +29,7 @@
     <div class="col-lg-6">
         <div class="panel panel-info">
             <div class="panel-heading">
-                Team Members
+                Team Information
             </div>
             <div class="panel-body" id="team_display">
                 Select a team.
@@ -37,7 +38,8 @@
     </div>
     </div>
 
-    <div id="team_template" style="display: none;">
+    <!-- Team Information DIV -->
+    <div id="team_template" style="display: none;" data-team="">
         <div class="row">
             <div class="col-lg-12">
                 <label>Manager:</label>
@@ -46,8 +48,10 @@
                     <option value="{{ user.id }}">{{ user }}</option>
                     {% endfor %}
                 </select>
-            <button class="btn btn-success btn-sm save-manager-button" style="margin-left: 10px; position: relative; top: -2px;">SAVE MANAGER</button>
+            <button class="btn btn-success btn-sm save-manager-button" data-team="" style="margin-left: 10px; position: relative; top: -2px;">SAVE MANAGER</button>
+            <button class="btn btn-sm btn-danger delete-team-btn" style="position: relative; float: right;" data-id="">DELETE TEAM</button>
             </div>
+
         </div>
         <br />
         <br />
@@ -64,14 +68,42 @@
             <div class="col-lg-12">
                 <label>Add Member:</label>
                 <select class="new-member-select">
+                    <option disabled selected>Select New Team Member...</option>
                     {% for user in users %}
-                    <option id="{{ user.id }}">{{ user }}</option>
+                    <option value="{{ user.id }}">{{ user }}</option>
                     {% endfor %}
                 </select>
-                <button class="btn btn-success btn-sm" style="margin-left: 10px; position: relative; top: -2px;"><i class="fa fa-plus"></i></button>
+                <button class="btn btn-success btn-sm add-member-btn" style="margin-left: 10px; position: relative; top: -2px;"><i class="fa fa-plus"></i></button>
             </div>
         </div>
     </div>
+    <!-- / Team Information DIV -->
+
+    <!-- New Team Modal -->
+    <div class="modal fade" id="new_team_modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">New Team - Manager Selection</h4>
+                </div>
+                <div class="modal-body">
+                    Please select a team manager to begin:<br /> <br />
+                    <label>Manager:</label>
+                    <select class="new-manager-select">
+                        {% for user in users %}
+                            <option value="{{ user.id }}">{{ user }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary save-new-team-btn">Save New Team</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+    <!-- / New Team Modal -->
 {% endblock %}
 
 {% block js_body %}
@@ -81,76 +113,197 @@
 	<script language="javascript" src='/static/js/bootstrap-datepicker.min.js'></script>
 	{% if user.is_superuser %}
 	<script language="javascript">
-    function update_selected_team(team_info, selected_item){
-         $('.team_item.active').each(function(){
-               $(this).removeClass('active');
-           });
+    function remove_team_member(){
+        var team_member_id = $(this).attr('data-id');
 
-           $(selected_item).addClass('active');
-
-            var team_div = $('#team_template').clone(true);
-            $(team_div).find('.team-list').html('');
-
-
-           for(var i = 0; i < team_info.members.length; i++){
-              var li = document.createElement("li");
-              $(li).addClass("list-group-item team-member-item");
-              $(li).html(team_info.members[i].name);
-              $(li).attr('data-id', team_info.members[i].id);
-
-              var rm_btn = document.createElement("button");
-              $(rm_btn).addClass('btn btn-danger btn-sm').html('<i class="fa fa-remove"></i>')
-                  .css("float", "right").attr("title", "Remove from team")
-                  .attr('data-id', team_info.members[i].id);
-
-              $(li).append(rm_btn);
-
-              $(team_div).find('.team-list').append(li);
-           }
-
-           $(team_div).find('.manager-select').attr('id', 'active_manager');
-            $(team_div).find('.manager-select').val(team_info.manager.id);
-            $('#team_display').html('').append(team_div);
-            $(team_div).show();
+        $.ajax({
+            url: '../remove_team_member',
+            data: {id: team_member_id},
+            dataType: 'json',
+            success: function(team_info){
+                {#alert("Team member removed successfully!");#}
+                update_selected_team(team_info);
+            }
+        })
     }
 
-        $(document).ready(function(){
-           $('.team_item').click(function(){
-               var manager_id = $(this).attr('data-manager');
-               var selected_item = this;
+    function add_team_member(){
+        var team_id = $(this).attr('data-id');
+        var selected_user = $('#new_member_select').val();
 
-               $.ajax({
-                   url: '../get_team',
-                   data: {'manager': manager_id},
-                   dataType: 'json',
-                   success: function(team_info){
-                        update_selected_team(team_info, selected_item);
+        $.ajax({
+            url: '../add_team_member',
+            data: {team_id: team_id, member: selected_user},
+            dataType: 'json',
+            success: function(team_info){
+                {#alert("Team member added successfully!");#}
+                update_selected_team(team_info);
+            }
+        })
+    }
 
-                   }
-               });
+    function delete_team(){
+        if(confirm("Are you sure you want to remove this team?")){
+            var team_id = $(this).attr("data-id");
 
-           });
+            $.ajax({
+                url: '../remove_team',
+                data: {team_id: team_id},
+                dataType: 'json',
+                success: function(old_team_id){
+                    {#alert("Team successfully removed!");#}
 
-           $('.save-manager-button').click(function(){
-               var members = [];
-               $('.team-member-item').each(function(){
-                   members.push($(this).attr('data-id'));
-               });
+                    // remove that team from the team list
+                    $('.team_item[data-id="'+old_team_id+'"]').remove();
 
-               $.ajax({
-                   url: '../save_manager',
-                   data: {'members': members, 'manager': $('#active_manager').val()},
-                   dataType: 'json',
-                   success: function(data){
-                       alert("Saved successfully!");
-                       var selected_item = $('.team_item.active');
-                        update_selected_team(data, selected_item);
-                        // make sure to update the manager name on the left
-                       $(selected_item).find('.manager-name').html(data.manager.name);
-                   }
-               });
-           });
+                    // update the team information DIV (clear it)
+                    $('#team_display').html('Select a team.');
+                }
+            })
+        }
+    }
+
+    function update_selected_team(team_info){
+        // remove any other "active" classes from previously selected teams
+        $('.team_item.active').each(function(){
+            $(this).removeClass('active');
         });
+
+        // activate the currently selected team entry in the list
+        $('.team_item[data-id="'+team_info.id+'"]').addClass('active');
+
+        // clone the template
+        var team_div = $('#team_template').clone(true);
+
+        // clear the team list
+        $(team_div).find('.team-list').html('');
+
+        // set the team ID for this cloned DIV
+        $(team_div).attr('data-team', team_info.id);
+
+        // update the id for the "save manager" button
+        $(team_div).find('.save-manager-button').attr('data-team', team_info.id);
+
+        // update the data id for the "DELETE TEAM" button
+        $(team_div).find('.delete-team-btn').attr('data-id', team_info.id);
+
+        // add functionality for the delete team button
+        $(team_div).find('.delete-team-btn').on("click", delete_team);
+
+
+        // for each member in our team, add them to the list
+        for(var i = 0; i < team_info.members.length; i++){
+            var li = document.createElement("li");
+            $(li).addClass("list-group-item team-member-item");
+            $(li).html(team_info.members[i].name);
+
+            // set their specific id (note: this is the TEAM MEMBER id, NOT the redmine user id)
+            $(li).attr('data-id', team_info.members[i].id);
+
+            // add a remove button
+            var rm_btn = document.createElement("button");
+            $(rm_btn).addClass('btn btn-danger btn-sm').html('<i class="fa fa-remove"></i>')
+                .css("float", "right").attr("title", "Remove from team")
+                .attr('data-id', team_info.members[i].id);
+
+            // add functionality to this remove button
+            $(rm_btn).on("click", remove_team_member);
+
+            $(li).append(rm_btn);
+
+            $(team_div).find('.team-list').append(li);
+        }
+
+        // add the team id to the "Add Member" plus button
+        $(team_div).find('.add-member-btn').attr('data-id', team_info.id);
+
+        // set the "new-member-select" drop down's ID for easier querying
+        $(team_div).find('.new-member-select').attr('id', 'new_member_select');
+
+        // add click function to the "add new member" button
+        $(team_div).find('.add-member-btn').on("click", add_team_member);
+
+        // select the id for the drop down to a specific ID (easier querying later)
+        $(team_div).find('.manager-select').attr('id', 'active_manager');
+
+        // set the selected manager drop down to the team's manager
+        $(team_div).find('.manager-select').val(team_info.manager.id);
+        $('#team_display').html('').append(team_div);
+        $(team_div).show();
+
+        // make sure to update the manager name on the left
+        $('.team_item[data-id="'+team_info.id+'"]').find('.manager-name').html(team_info.manager.name);
+
+        // and make sure to update the count of team members in that list
+        $('.team_item[data-id="'+team_info.id+'"]').find('.badge').html(team_info.members.length);
+    }
+
+    $(document).ready(function(){
+        // when a team is selected on the left from the list of teams...
+        $('.team_item').click(function(){
+            var team_id = $(this).attr('data-id');
+
+            $.ajax({
+                url: '../get_team',
+                data: {'team_id': team_id},
+                dataType: 'json',
+                success: function(team_info){
+                    update_selected_team(team_info);
+                }
+            });
+
+        });
+
+        // when the "SAVE MANAGER" button is clicked for a specific team (change team's manager)
+        $('.save-manager-button').click(function(){
+            var team_id = $(this).attr('data-team');
+            $.ajax({
+                url: '../save_manager',
+                data: {'team_id': team_id, 'manager': $('#active_manager').val()},
+                dataType: 'json',
+                success: function(team_info){
+                    alert("Saved successfully!");
+                    update_selected_team(team_info);
+                }
+            });
+        });
+
+        // when the "Save New Team" button is clicked (inside the "New Team Modal")...
+        $('.save-new-team-btn').click(function(){
+            var new_manager = $('.new-manager-select').val();
+
+            $.ajax({
+                url: '../create_team',
+                data: {manager: new_manager},
+                dataType: 'json',
+                success: function(team_info){
+                    // close the modal
+                    $('#new_team_modal').modal('hide');
+
+                    // add an entry for this team
+                    var team_link = document.createElement("a");
+                    $(team_link).attr('href', '#').addClass('team_item list-group-item').attr('data-id', team_info.id)
+                        .attr('data-manager', team_info.manager.id);
+
+                    // add the manager's name in a span
+                    var manager_span = document.createElement("span");
+                    $(manager_span).html(team_info.manager.name);
+                    $(team_link).append(manager_span);
+
+                    // add a badge with the length of members (should be zero but we'll calculate the length anyway)
+                    var list_badge = document.createElement('span');
+                    $(list_badge).addClass('badge').html(team_info.members.length);
+                    $(team_link).append(list_badge);
+
+                    // add this link to the bottom of the team list
+                    $('.team-list').append(team_link);
+
+                    update_selected_team(team_info);
+                }
+            })
+        });
+
+    });
 	</script>
 	{% endif %}
 {% endblock %}

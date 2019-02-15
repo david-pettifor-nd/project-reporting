@@ -30,6 +30,8 @@ from time_management.reports import weekly_report_form_url
 from time_management.rates import rates_home, save_rate, save_start_date, save_end_date, save_rates, delete_rates, \
     add_rates, add_single_category
 from time_management.auth import login_page, logout_request
+from time_management.team_management import team_management, get_teams, get_team, save_manager, remove_team_member, \
+    add_team_member, remove_team, create_team
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -72,6 +74,16 @@ urlpatterns = [
 
 
     # ------------- MANAGERS ONLY ----------------#
+
+    # team management
+    url(r'^teams/$', team_management, name='team_management'),
+    url(r'^get_teams/$', get_teams, name='get_teams'),
+    url(r'^get_team$', get_team, name='get_team'),
+    url(r'^save_manager', save_manager, name='save_manager'),
+    url(r'^remove_team_member', remove_team_member, name='remove_team_member'),
+    url(r'^add_team_member', add_team_member, name='add_team_member'),
+    url(r'^remove_team', remove_team, name='remove_team'),
+    url(r'^create_team', create_team, name='create_team'),
 
     # Project Planning
     url(r'^planning/$', planning_home, name='planning_home'),
