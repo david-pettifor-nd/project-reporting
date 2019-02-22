@@ -6,10 +6,12 @@ import calendar
 import json
 from django.contrib.auth.decorators import login_required
 from time_management.decorators import user_is_in_manager_group
+from time_management.time_tools import get_user_list
+from time_management.models import RedmineUser
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def home(request):
     # default to first of the month and today
     end_date = datetime.datetime.now().today().strftime('%m/%d/%Y')
@@ -19,7 +21,7 @@ def home(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_entries_home(request):
     """
         Generates the landing page for anyone to come to for them to change/modify
@@ -27,8 +29,20 @@ def get_entries_home(request):
         """
     # target
     target = request.user.username
-    if request.user.is_staff and 'target' in request.GET and request.GET['target'] != '':
+
+    if 'target' in request.GET and request.GET['target'] != '' and request.GET['target'] != target and not request.user.is_staff:
+        # make sure the target is in their manager's group
+        user_list = get_user_list(username=request.user.username, as_json=True)
+        print "Looking for:", request.GET['target']
+        target_user = RedmineUser.objects.get(login=request.GET['target'])
+        if target_user.id in user_list:
+            target = request.GET['target']
+
+    if request.user.is_staff:
         target = request.GET['target']
+
+    # if request.user.is_staff and 'target' in request.GET and request.GET['target'] != '':
+    #     target = request.GET['target']
 
     # what is the month?
     month = request.GET['month']
@@ -190,10 +204,18 @@ def get_entries_home(request):
     #         'month': month, 'year': year})
 
     # get a list of users who have time logged for this month/year
-    cur.execute(
-        "SELECT firstname, lastname, login FROM users "
-        "ORDER BY login DESC, firstname, lastname;" % {
-            'month': month, 'year': year})
+    if request.user.is_staff:
+        cur.execute(
+            "SELECT firstname, lastname, login FROM users "
+            "ORDER BY login DESC, firstname, lastname;" % {
+                'month': month, 'year': year})
+    else:
+        user_list = get_user_list(request.user.username)
+        cur.execute(
+            "SELECT firstname, lastname, login FROM users "
+            "WHERE id in %(users)s "
+            "ORDER BY login DESC, firstname, lastname;" % {
+                'month': month, 'year': year, 'users': user_list})
     users = cur.fetchall()
     # loop through the users, constructing a dictionary
     user_list = []
@@ -260,13 +282,13 @@ def get_entries_home(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_entries_home_page(request):
     """
         Generates the landing page for anyone to come to for them to change/modify
         their hours.  It allows for users to move hours from project to project.
         """
-    print "HEY"
+
     # target
     target = request.user.username
     if request.user.is_staff and 'target' in request.GET and request.GET['target'] != '':
@@ -304,16 +326,34 @@ def get_entries_home_page(request):
         order_by = 'enumerations.name ' + order + ', projects.name ASC, time_entries.spent_on ASC'
 
     # get the records for this user, month, and year
-    cur.execute(
-        "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
-        "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
-        "projects.id FROM time_entries INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
-        "INNER JOIN projects ON projects.id = time_entries.project_id "
-        "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id WHERE "
-        "time_entries.spent_on >= '%(start)s'::date AND time_entries.spent_on <= '%(end)s'::date "
-        "AND custom_values.value != '' ORDER BY %(order)s;" % {
-            'start': request.GET['start'], 'end': request.GET['end'],
-            'user': target, 'order': order_by})
+    if request.user.is_staff:
+        cur.execute(
+            "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
+            "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
+            "projects.id FROM time_entries "
+            "INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
+            "INNER JOIN projects ON projects.id = time_entries.project_id "
+            "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id "
+            "WHERE "
+            "time_entries.spent_on >= '%(start)s'::date AND time_entries.spent_on <= '%(end)s'::date "
+            "AND custom_values.value != '' ORDER BY %(order)s;" % {
+                'start': request.GET['start'], 'end': request.GET['end'],
+                'user': target, 'order': order_by})
+    else:
+        user_id_list = get_user_list(request.user.username)
+        cur.execute(
+            "SELECT time_entries.id, time_entries.project_id, projects.name, time_entries.issue_id, time_entries.hours, "
+            "time_entries.comments, enumerations.name, time_entries.spent_on, custom_values.value, enumerations.id, "
+            "projects.id FROM time_entries "
+            "INNER JOIN custom_values ON custom_values.customized_id = time_entries.id "
+            "INNER JOIN projects ON projects.id = time_entries.project_id "
+            "INNER JOIN enumerations ON enumerations.id = time_entries.activity_id "
+            "INNER JOIN users ON time_entries.user_id = users.id WHERE "
+            "time_entries.spent_on >= '%(start)s'::date AND time_entries.spent_on <= '%(end)s'::date "
+            "AND users.id in %(user)s "
+            "AND custom_values.value != '' ORDER BY %(order)s;" % {
+                'start': request.GET['start'], 'end': request.GET['end'],
+                'user': user_id_list, 'order': order_by})
 
     entries = cur.fetchall()
 
@@ -496,16 +536,28 @@ def get_entries_home_page(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_distribution(request):
     # connect to the database
     cur = connection.cursor()
 
     # are we a manager?
-    cur.execute("select id from users where login = '%(username)s';" % {'username': request.user.username})
-    id = cur.fetchone()[0]
-    if 'id' in request.GET:
+    # cur.execute("select id from users where login = '%(username)s';" % {'username': request.user.username})
+    # id = cur.fetchone()[0]
+    id = None
+    if request.user.is_staff and 'id' in request.GET:
         id = request.GET['id']
+
+    if 'id' in request.GET and not request.user.is_staff:
+        user_list = get_user_list(username=request.user.username, as_json=True)
+        if int(request.GET['id']) in user_list:
+            id = request.GET['id']
+
+    if id is None:
+        # set the id to the user's ID
+        redmine_user = RedmineUser.objects.get(login=request.user.username)
+        id = redmine_user.id
+    print id
 
     # first check to make sure we have all we need
     # do we have a date range?
@@ -612,7 +664,7 @@ def get_distribution(request):
 
 
 @login_required
-@user_is_in_manager_group
+# @user_is_in_manager_group
 def get_all_distribution(request):
     # connect to the database
     cur = connection.cursor()
@@ -632,80 +684,177 @@ def get_all_distribution(request):
     #         "spent_on >= '%(start)s' and spent_on <= '%(end)s' group by project_id, projects.name;" % {
     #         'start': request.GET['start_date'], 'end': request.GET['end_date']}
     # cur.execute(query)
-    cur.execute("SELECT id, name FROM projects WHERE "
-                "parent_id is NULL;")
 
-    parents = cur.fetchall()
-    total_hours = 0.0
+    if request.user.is_staff:
+        cur.execute("SELECT id, name, parent_id FROM projects;")
+    else:
+        # get a list of users this person should be able to see (if manager, their team[s])
+        user_id_list = get_user_list(request.user.username)
+        print "User list:", user_id_list
+        cur.execute("SELECT distinct(projects.id), projects.name, parent_id FROM projects "
+                    "INNER JOIN members ON projects.id = members.project_id "
+                    "INNER JOIN users ON users.id = members.user_id "
+                    "WHERE users.id in %(users)s;" % {'users': user_id_list})
 
-    parent_list = []
+    all_projects = cur.fetchall()
 
-    for parent_project in parents:
-        parent_obj = {
-            'id': parent_project[0],
-            'name': parent_project[1],
-            'subprojects': [],
-            'total_hours': 0.0,
-            'percent': 0.0
-        }
-        # get a list of all sub-projects
-        cur.execute("SELECT id, name FROM projects WHERE parent_id = %(parent)s or id = %(parent)s;" % {
-            'parent': parent_project[0]
-        })
+    parent_projects = []
 
-        sub_projects = cur.fetchall()
-        for sub_project in sub_projects:
-            s_obj = {
-                'id': sub_project[0],
-                'name': sub_project[1],
+    # first run through and identify all of the parent projects
+    for project in all_projects:
+        if project[2] is None:
+            # then we have a parent project.  See if it already exists in the parent projects list
+            parent_found = False
+            for parent in parent_projects:
+                if parent['id'] == project[0]:
+                    parent_found = True
+
+            if not parent_found:
+                # then add what we have
+                parent_obj = {
+                    'id': project[0],
+                    'name': project[1],
+                    'subprojects': [],
+                    'total_hours': 0.0,
+                    'percent': 0.0
+                }
+                parent_projects.append(parent_obj)
+            continue
+
+        # otherwise, this is a sub project, so let's see if we can find our parent
+        parent_found = False
+        for parent in parent_projects:
+            if parent['id'] == project[2]:
+                parent_found = True
+
+                parent['subprojects'].append(
+                    {
+                        'id': project[0],
+                        'name': project[1],
+                        'total_hours': 0.0,
+                        'percent': 0.0
+                    }
+                )
+
+        if not parent_found:
+            # then add what we have
+            parent_obj = {
+                'id': project[2],
+                'name': None,
+                'subprojects': [
+                    {
+                        'id': project[0],
+                        'name': project[1],
+                        'total_hours': 0.0,
+                        'percent': 0.0
+                    }
+                ],
                 'total_hours': 0.0,
                 'percent': 0.0
             }
+            parent_projects.append(parent_obj)
 
-            cur.execute("SELECT sum(hours) FROM time_entries WHERE project_id = %(project)s AND "
-                        "spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
-                'start': request.GET['start_date'],
-                'end': request.GET['end_date'],
-                'project': sub_project[0]
+    # now run through each parent project and make sure we have a name for it
+    for project in parent_projects:
+        if project['name'] is None:
+            cur.execute("SELECT name FROM projects WHERE id = %(id)s;" % {
+                'id': project['id']
             })
+            name = cur.fetchone()[0]
+            project['name'] = name
+
+    total_hours = 0.0
+
+    parent_list = parent_projects
+
+    for parent_project in parent_list:
+        for sub_project in parent_project['subprojects']:
+
+            if request.user.is_staff:
+                cur.execute("SELECT sum(hours) FROM time_entries WHERE project_id = %(project)s AND "
+                            "spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
+                                'start': request.GET['start_date'],
+                                'end': request.GET['end_date'],
+                                'project': sub_project['id']
+                            })
+            else:
+                # get a list of users this person should be able to see (if manager, their team[s])
+                user_id_list = get_user_list(request.user.username)
+                cur.execute("SELECT sum(hours) FROM time_entries "
+                            "INNER JOIN users ON time_entries.user_id = users.id "
+                            "WHERE project_id = %(project)s AND "
+                            "spent_on >= '%(start)s' and spent_on <= '%(end)s' "
+                            "AND users.id in %(user)s;" % {
+                                'start': request.GET['start_date'],
+                                'end': request.GET['end_date'],
+                                'project': sub_project['id'],
+                                'user': user_id_list
+                            })
             hours = cur.fetchone()
             if hours[0] is not None or hours[0] > 0:
-                s_obj['total_hours'] = hours[0]
-                parent_obj['total_hours'] += hours[0]
+                sub_project['total_hours'] = hours[0]
+                parent_project['total_hours'] += hours[0]
                 total_hours += hours[0]
 
-            parent_obj['subprojects'].append(s_obj)
+        # THEN check for hours logged to the parent project
+        if request.user.is_staff:
+            cur.execute("SELECT sum(hours) FROM time_entries WHERE project_id = %(project)s AND "
+                        "spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
+                            'start': request.GET['start_date'],
+                            'end': request.GET['end_date'],
+                            'project': parent_project['id']
+                        })
+        else:
+            # get a list of users this person should be able to see (if manager, their team[s])
+            user_id_list = get_user_list(request.user.username)
+            cur.execute("SELECT sum(hours) FROM time_entries "
+                        "INNER JOIN users ON time_entries.user_id = users.id "
+                        "WHERE project_id = %(project)s AND "
+                        "spent_on >= '%(start)s' and spent_on <= '%(end)s' "
+                        "AND users.id in %(user)s;" % {
+                            'start': request.GET['start_date'],
+                            'end': request.GET['end_date'],
+                            'project': parent_project['id'],
+                            'user': user_id_list
+                        })
+        hours = cur.fetchone()
+        if hours[0] is not None or hours[0] > 0:
+            # then we need to make sure to add the parent as one of its sub-projects (so it shows on the outer ring)
+            i_am_my_own_child = {
+                'id': parent_project['id'],
+                'name': parent_project['name'],
+                'total_hours': hours[0],
+                'percent': 0.0
+            }
+            parent_project['subprojects'].append(i_am_my_own_child)
+            parent_project['total_hours'] += hours[0]
+            total_hours += hours[0]
 
-        parent_list.append(parent_obj)
+            # parent_project['subprojects'].append(s_obj)
+
+        # parent_list.append(parent_obj)
 
     # now run through and calculate percentages
     for parent in parent_list:
         # set the parent's percentage
-        parent['percent'] = (float(parent['total_hours']) / float(total_hours) * 100.0)
+        if total_hours > 0:
+            parent['percent'] = (float(parent['total_hours']) / float(total_hours) * 100.0)
 
-        # for each sub-project
-        for sub_project in parent['subprojects']:
-            sub_project['percent'] = (float(sub_project['total_hours']) / float(total_hours) * 100.0)
+            # for each sub-project
+            for sub_project in parent['subprojects']:
+                sub_project['percent'] = (float(sub_project['total_hours']) / float(total_hours) * 100.0)
 
-        print parent['name'], parent['percent']
+            print parent['name'], parent['percent']
+        else:
+            parent['percent'] = 100.0
+            for sub_project in parent['subprojects']:
+                sub_project['percent'] = 0.0
 
+    # run through and remove any parents that may have zero hours
+    parents_with_hours = []
+    for parent in parent_list:
+        if parent['total_hours'] > 0:
+            parents_with_hours.append(parent)
 
-    # # get the total hours
-    # query = "select SUM(hours) FROM time_entries INNER JOIN users ON time_entries.user_id = users.id " \
-    #         "WHERE spent_on >= '%(start)s' and spent_on <= '%(end)s';" % {
-    #             'start': request.GET['start_date'], 'end': request.GET['end_date']}
-    # cur.execute(query)
-    # total = cur.fetchone()[0]
-    #
-    # # loop through all records
-    # entry_list = []
-    #
-    # for rec in records:
-    #     new_entry = {}
-    #     new_entry['id'] = rec[0]
-    #     new_entry['name'] = rec[1]
-    #     new_entry['hours'] = rec[2]
-    #     entry_list.append(new_entry)
-
-    context = {'entries': parent_list, 'total': total_hours}
+    context = {'entries': parents_with_hours, 'total': total_hours}
     return HttpResponse(json.dumps(context))

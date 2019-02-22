@@ -1,0 +1,6 @@
+<div class="list-group team-list">
+    {% for team in team_list %}
+        <a href="#" class="team_item list-group-item" data-id="{{ team.id }}" data-manager="{{ team.manager.id }}"><span class="manager-name">{{ team.manager.name }}</span> <span class="badge">{{ team.members|length }}</span></a>
+    {% endfor %}
+</div>
+

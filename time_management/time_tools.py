@@ -1,7 +1,7 @@
 import datetime
 
 from holidays import get_holidays, get_working_days
-
+from time_management.models import Team, RedmineUser
 
 def get_monthly_expected(month=datetime.datetime.now().month, year=datetime.datetime.now().year):
     # get the first and last day of the month
@@ -50,3 +50,49 @@ def manager_date_working_hours(day):
     working_days = get_working_days(day.month, day.year)
 
     return float(30) / float(working_days)
+
+
+def get_user_list(username, as_json=False):
+    """
+    Given a user ID, look up any teams this user is a manager for.  If they are, return a list of user IDs that are
+    part of this team (including the user themselves).  If not, return only the user.
+    :param username:
+    :return: List of user IDs they are a manager for, OR just their own.
+    """
+
+    # get their Redmine user id
+    user = RedmineUser.objects.get(login=username)
+    user_id = user.id
+    user_ids = [user_id]
+
+    # grab a list teams they are a manager for (if any)
+    teams = Team.objects.filter(manager__id=user_id)
+
+    for team in teams:
+        # grab a list of team members
+        for member in team.team_teammember.all():
+            if member.member.id not in user_ids:
+                user_ids.append(member.member.id)
+
+    if len(user_ids) == 1:
+        if as_json:
+            return [user_id]
+        return '('+str(user_id)+')'
+
+    if as_json:
+        return user_ids
+    return str(tuple(user_ids))
+
+
+def get_all_users():
+    """
+    Returns a tuple of all user ids.
+    :return:
+    """
+    users = RedmineUser.objects.all()
+
+    user_list = []
+    for user in users:
+        user_list.append(user.id)
+
+    return user_list

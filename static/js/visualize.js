@@ -14,8 +14,12 @@ function init()
 	$('#start_date').val(first_of_month);
 	$('#end_date').val(today);
 
-	$('#start_date').datepicker();
-	$('#end_date').datepicker();
+	$('#start_date').datepicker({
+		dateFormat: 'yy-mm-dd'
+	});
+	$('#end_date').datepicker({
+		dateFormat: 'yy-mm-dd'
+	});
 
 	GenerateProgrammersView();
 
