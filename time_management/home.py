@@ -542,10 +542,22 @@ def get_distribution(request):
     cur = connection.cursor()
 
     # are we a manager?
-    cur.execute("select id from users where login = '%(username)s';" % {'username': request.user.username})
-    id = cur.fetchone()[0]
-    if 'id' in request.GET:
+    # cur.execute("select id from users where login = '%(username)s';" % {'username': request.user.username})
+    # id = cur.fetchone()[0]
+    id = None
+    if request.user.is_staff and 'id' in request.GET:
         id = request.GET['id']
+
+    if 'id' in request.GET and not request.user.is_staff:
+        user_list = get_user_list(username=request.user.username, as_json=True)
+        if int(request.GET['id']) in user_list:
+            id = request.GET['id']
+
+    if id is None:
+        # set the id to the user's ID
+        redmine_user = RedmineUser.objects.get(login=request.user.username)
+        id = redmine_user.id
+    print id
 
     # first check to make sure we have all we need
     # do we have a date range?

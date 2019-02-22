@@ -11,7 +11,7 @@
 
 {% block content %}
     <div class="well">
-	{% if request.user.is_staff %}
+	{% if users_list|length > 1 %}
 	<input type="radio" name="view_type" id="view_project" checked="true" style="display: inline;"/><label for="view_project" style="margin-left: 5px;">Project</label>
 	<input type="radio" name="view_type" id="view_programmer" style="margin-left: 20px;"/><label for="view_programmer" style="margin-left: 5px;">Developer</label>
 	<br /><br />
@@ -20,12 +20,12 @@
 	<span class="from_date">From: <input type="text" id="start_date" style="height: auto;"/></span>
 	<span class="to_date">To: <input type="text" id="end_date"  style="height: auto;"/></span>
 
-	{% if request.user.is_staff %}
+	{% if users_list|length > 1 %}
 	<section class="entity" style="display: inline; margin-left: 20px;">
 
 	</section>
 	{% endif %}
-	{% if request.user.is_staff %}
+	{% if users_list|length > 1 %}
 	<button type="button" id="generate_manager_view" class="generate_view" style="margin-left: 20px;">View</button>
 	{% else %}
 	<button type="button" id="generate_view" class="generate_programmers_view" style="margin-left: 20px;">View</button>
@@ -50,7 +50,7 @@
 		init();
 		$('#vis_link').toggleClass("selected_nav");
 	</script>
-	{% if request.user.is_staff %}
+	{% if users_list|length > 1f %}
 	<script language="javascript">
 		function UpdateEntityList(selected_entity)
 		{
