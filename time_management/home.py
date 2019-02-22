@@ -7,6 +7,7 @@ import json
 from django.contrib.auth.decorators import login_required
 from time_management.decorators import user_is_in_manager_group
 from time_management.time_tools import get_user_list
+from time_management.models import RedmineUser
 
 
 @login_required
@@ -28,8 +29,20 @@ def get_entries_home(request):
         """
     # target
     target = request.user.username
-    if request.user.is_staff and 'target' in request.GET and request.GET['target'] != '':
+
+    if 'target' in request.GET and request.GET['target'] != '' and request.GET['target'] != target and not request.user.is_staff:
+        # make sure the target is in their manager's group
+        user_list = get_user_list(username=request.user.username, as_json=True)
+        print "Looking for:", request.GET['target']
+        target_user = RedmineUser.objects.get(login=request.GET['target'])
+        if target_user.id in user_list:
+            target = request.GET['target']
+
+    if request.user.is_staff:
         target = request.GET['target']
+
+    # if request.user.is_staff and 'target' in request.GET and request.GET['target'] != '':
+    #     target = request.GET['target']
 
     # what is the month?
     month = request.GET['month']
@@ -191,10 +204,18 @@ def get_entries_home(request):
     #         'month': month, 'year': year})
 
     # get a list of users who have time logged for this month/year
-    cur.execute(
-        "SELECT firstname, lastname, login FROM users "
-        "ORDER BY login DESC, firstname, lastname;" % {
-            'month': month, 'year': year})
+    if request.user.is_staff:
+        cur.execute(
+            "SELECT firstname, lastname, login FROM users "
+            "ORDER BY login DESC, firstname, lastname;" % {
+                'month': month, 'year': year})
+    else:
+        user_list = get_user_list(request.user.username)
+        cur.execute(
+            "SELECT firstname, lastname, login FROM users "
+            "WHERE id in %(users)s "
+            "ORDER BY login DESC, firstname, lastname;" % {
+                'month': month, 'year': year, 'users': user_list})
     users = cur.fetchall()
     # loop through the users, constructing a dictionary
     user_list = []

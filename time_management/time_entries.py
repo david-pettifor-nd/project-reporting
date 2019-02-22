@@ -5,12 +5,27 @@ import calendar
 import json
 from django.contrib.auth.decorators import login_required
 from time_management.decorators import user_is_in_manager_group
+from time_management.time_tools import get_user_list, get_all_users
 
 
 @login_required
 # @user_is_in_manager_group
 def entries_home(request):
-    return render(request, 'time_entries.html', {})
+    users = None
+
+    if request.user.is_staff:
+        user_list = get_all_users()
+    else:
+        user_list = get_user_list(username=request.user.username, as_json=True)
+
+    print "ENTRIES:", type(user_list)
+
+    if len(user_list) > 1:
+        users = user_list
+
+    return render(request, 'time_entries.html', {
+        'user_list': users
+    })
 
 
 @login_required
@@ -119,16 +134,22 @@ def update_entries(request):
             userid = cur.fetchone()
             target = userid[0]
             target_id = userid[1]
-            if (target != user) and (not request.user.is_staff):
-                return HttpResponse("Error 97")
+            # get the list of users they're allowed to modify
+            if not request.user.is_staff:
+                user_list = get_user_list(username=request.user.username, as_json=True)
+                if target_id not in user_list and (not request.user.is_staff):
+                    return HttpResponse("Error 97")
         else:
             # otherwise, get the target_id
             cur.execute("SELECT users.login, users.id FROM users WHERE login = '%(user)s';" % {'user': target})
             userid = cur.fetchone()
             target = userid[0]
             target_id = userid[1]
-            if (target != user) and (not request.user.is_staff):
-                return HttpResponse("Error 97")
+            # get the list of users they're allowed to modify
+            if not request.user.is_staff:
+                user_list = get_user_list(username=request.user.username, as_json=True)
+                if target_id not in user_list and (not request.user.is_staff):
+                    return HttpResponse("Error 97")
 
     # now let's run through each entry and perform our update
     for entry in entries:
@@ -222,20 +243,18 @@ def delete_entry(request):
     # connect to the database
     cur = connection.cursor()
 
-    # let's do some security checks - run through each entry
-    # and make sure they are the owner of each one...unless they're a manager!
-    target = user
-    if target in request.GET and request.GET['target'] is not None and request.GET['target'] != '':
-        target = request.GET['target']
-
     cur.execute(
         "SELECT users.login, users.id FROM users INNER JOIN time_entries "
         "ON time_entries.user_id = users.id WHERE time_entries.id = %(entry)s;" % {
             'entry': entry})
     userid = cur.fetchone()
     target = userid[0]
-    if (target != user) and (not request.user.is_staff):
-        return HttpResponse("Error 97")
+    target_id = userid[1]
+    # get the list of users they're allowed to modify
+    if not request.user.is_staff:
+        user_list = get_user_list(username=request.user.username, as_json=True)
+        if target_id not in user_list and (not request.user.is_staff):
+            return HttpResponse("Error 97")
 
     # get a copy of that record in case we need to log it...
     cur.execute("SELECT * FROM time_entries WHERE id = %(id)s;" % {'id': entry})
