@@ -4,12 +4,26 @@ import datetime
 import json
 from django.contrib.auth.decorators import login_required
 from time_management.decorators import user_is_in_manager_group
+from time_management.time_tools import get_user_list, get_all_users
 
 
 @login_required
 # @user_is_in_manager_group
 def calendar_home(request):
-    return render(request, 'calendar.html', {})
+    users = None
+
+    if request.user.is_staff:
+        user_list = get_all_users()
+    else:
+        user_list = get_user_list(username=request.user.username, as_json=True)
+
+    print "ENTRIES:", type(user_list)
+
+    if len(user_list) > 1:
+        users = user_list
+    return render(request, 'calendar.html', {
+        'user_list': users
+    })
 
 
 @login_required
@@ -24,14 +38,18 @@ def update_entry_data(request):
     # let's do some security checks - run through each entry
     # and make sure they are the owner of each one...unless they're a manager!
     target = user
-    if request.GET['target'] is not None and request.GET['target'] != '':
+    if 'target' in request.GET and request.GET['target'] is not None and request.GET['target'] != '':
         target = request.GET['target']
 
     cur.execute("SELECT users.login, users.id FROM users WHERE login = '%(user)s';" % {'user': target})
     userid = cur.fetchone()
     target = userid[0]
-    if (target != user) and (not request.user.is_staff):
-        return HttpResponse("Error 97")
+    target_id = userid[1]
+
+    if not request.user.is_staff:
+        user_list = get_user_list(username=request.user.username, as_json=True)
+        if target_id not in user_list and (not request.user.is_staff):
+            return HttpResponse("Error 97")
 
     # format the date properly
     edate = request.GET['date'].split('-')
