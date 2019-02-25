@@ -124,6 +124,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+# URL_PREFIX = 'reports/'
+
+FORCE_SCRIPT_NAME = 'reports'
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
@@ -134,11 +138,11 @@ STATICFILES_DIRS = [
     'static',
 ]
 
-STATIC_ROOT = '/var/www/'
+STATIC_ROOT = '/opt/services/djangoapp/static/'
 
 # actual login and logout urls (since we're in a sub-part of the site)
-LOGIN_URL = '/reports/accounts/login/'
-LOGOUT_URL = '/reports/accounts/logout/'
+LOGIN_URL = '/reports/login/'
+LOGOUT_URL = '/reports/logout/'
 
 # Custom field name that represents the log as categories:
 LOGGING_CATEGORY_NAME = 'Log As'

@@ -5,9 +5,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'redmine',
-        'USER': 'redmine',
-        'PASSWORD': 'redminepass',
-        'HOST': 'db',
+        'USER': 'postgres',
+        'PASSWORD': "Let's go turbo!",
+        'HOST': 'database1',
         'PORT': '5432'
     }
 }

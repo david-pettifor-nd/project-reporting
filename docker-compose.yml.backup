@@ -2,12 +2,14 @@ version: '3'
 
 volumes:
     pgdata:
+    redmine:
 
 services:
     db:
         image: redmine_db
         ports:
             - 127.0.0.1:5432:5432
+#            - 5432:5432
         environment:
             DATABASE_USER: 'redmine'
             DATABASE_PASSWORD: 'redminepass'
@@ -15,10 +17,11 @@ services:
         volumes:
             - pgdata:/var/lib/postgresql/data   # <- important!  the `/var/lib/postgresql/data` mounting point for your container is where postgresql's default data location is!
     redmine:
-        image: redmine
+        image: redmine:latest
         ports:
             - 127.0.0.1:8080:3000
-        restart: always
+        volumes:
+            - redmine:/usr
         environment:
           REDMINE_DB_POSTGRES: db
           REDMINE_DB_DATABASE: 'redmine'
