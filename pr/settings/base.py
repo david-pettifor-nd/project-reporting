@@ -126,7 +126,7 @@ USE_TZ = True
 
 # URL_PREFIX = 'reports/'
 
-FORCE_SCRIPT_NAME = 'reports'
+FORCE_SCRIPT_NAME = '/reports/'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Static files (CSS, JavaScript, Images)

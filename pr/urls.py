@@ -41,7 +41,7 @@ urlpatterns = [
 
     # ------------- For Everyone ----------------#
     # Home Page
-    url(r'^home/$', home, name='home'),
+    url(r'^$', home, name='home'),
     url(r'^get_entries$', get_entries_home, name="get_entries"),
     url(r'^get_all_entries$', get_entries_home_page, name="get_all_entries"),
     url(r'^get_distribution$', get_distribution, name="get_distribution"),

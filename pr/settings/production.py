@@ -31,7 +31,7 @@ CAS_AUTO_CREATE_USERS = False
 #    'cas.middleware.CASMiddleware',
 #)
 
-CAS_REDIRECT_URL = '/reports/home/'
+CAS_REDIRECT_URL = '/reports/'
 CAS_IGNORE_REFERER = True
 CAS_SERVER_URL = 'https://login.nd.edu/cas/login'
 CAS_AUTO_CREATE_USERS = False
