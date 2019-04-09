@@ -1,0 +1,72 @@
+version: '3.0'
+
+services:
+
+  django:
+    image: turbo_django:latest
+#    restart: always
+    volumes:
+        - .:/code/
+        - static_volume:/opt/services/djangoapp/static
+    depends_on:
+      - database1
+    networks:
+      - database1_network
+      - nginx_network
+
+  nginx:
+#    restart: always
+    image: nginx:1.13
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - nginx_volume:/usr/share/nginx
+      - redmine_volume:/redmine
+      - static_volume:/opt/services/djangoapp/static  # <-- bind the static volume
+      #- media_volume:/opt/services/djangoapp/media  # <-- bind the media volume
+    depends_on:
+      - redmine
+    networks:
+      - nginx_network
+
+  redmine:
+#    restart: always
+    image: redmine:latest
+    volumes:
+      - redmine_volume:/usr
+    environment:
+      REDMINE_DB_POSTGRES: database1
+      REDMINE_DB_DATABASE: 'redmine'
+      REDMINE_DB_PASSWORD: "Let's go turbo!"
+    depends_on:
+      - database1
+    networks:
+      - database1_network
+      - nginx_network
+
+  database1:
+#    restart: always
+    image: postgres:10
+    env_file:
+      - config/db/database1_env
+    networks:
+      - database1_network
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+    ports:
+      #- 127.0.0.1:5432:5432
+      - 5432:5432
+networks:
+  nginx_network:
+    driver: bridge
+  database1_network:
+    driver: bridge
+
+volumes:
+  postgres_volume:
+  redmine_volume:
+  nginx_volume:
+  static_volume:  # <-- declare the static volume
+  media_volume:  # <-- declare the media volume
