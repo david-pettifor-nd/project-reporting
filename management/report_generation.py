@@ -324,6 +324,18 @@ def generate_internal_report(request):
             else:
                 fopal = ''
 
+            # get the Project Activity Code
+            cur.execute(
+                "SELECT value FROM custom_values "
+                "inner join custom_fields on custom_fields.id = custom_values.custom_field_id "
+                "WHERE customized_id = %(project)s and customized_type='Project' AND custom_fields.name = 'Activity Code';" % {
+                    'project': project})
+            activity_code = cur.fetchall()
+            if len(activity_code) >= 1:
+                activity_code = activity_code[0][0]
+            else:
+                activity_code = ''
+
             # get the Project PI's email
             cur.execute(
                 "SELECT value FROM custom_values "
@@ -441,6 +453,7 @@ def generate_internal_report(request):
                 new_record['fpi'] = fpi  # Financially responsible PI (formatted as: "Last,First MI")
                 new_record['pi'] = '"' + (pi) + '"'  # Purchasers Last Name (PI we're working with)
                 new_record['pi_email'] = '"' + (pi_email) + '"'  # PI Email Address
+                new_record['activity_code'] = '"' + (activity_code) + '"'  # Activity Code
                 new_record['center'] = '""'  # Short Contributing Center Name
                 new_record['resource'] = '""'  # Resource Name
                 new_record['login'] = '"' + record[5] + '"'  # Line Item Assistant (netID of the user)
@@ -469,7 +482,7 @@ def generate_internal_report(request):
                 new_record.append('""')
                 new_record.append(record['pi_email'])
                 new_record.append(record['fopal'])
-                new_record.append('""')
+                new_record.append(record['activity_code'])
                 # new_record.append(record['service'])
                 # new_record.append(record['unit'])
                 # new_record.append(record['rate'])
