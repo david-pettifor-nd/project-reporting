@@ -100,14 +100,13 @@ def check_fopal(fopal=''):
 def get_billing_date(month, year):
     print "month:", month
     print "current:", datetime.datetime.now().month
-    if str(datetime.datetime.now().month) != str(month):
+    if str(datetime.datetime.now().month) != str(month) or str(datetime.datetime.now().year) !=str(year) :
         day = calendar.monthrange(int(year), int(month))[1]
-        #Going to return yyyy-mm-dd
-        return "{year}-{month}-{day}".format(year=str(year), month=month, day=str(day))
     else:
-        return str(datetime.datetime.now().today().day) + '-' + \
-               calendar.month_abbr[int(datetime.datetime.now().today().month)].upper() + '-' + \
-               str(datetime.datetime.now().today().year)[2:]
+        day = str(datetime.datetime.now().today().day)
+    #Going to return yyyy-mm-dd
+    return "{year}-{month}-{day}".format(year=str(year), month=month, day=str(day))
+        
 
 
 def report_generator_home(request):
