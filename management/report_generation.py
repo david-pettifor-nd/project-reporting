@@ -262,7 +262,7 @@ def generate_internal_report(request):
     response['Content-Disposition'] = 'attachment; filename="RedmineReport.csv"'
 
     # create the writer
-    writer = csv.writer(response)
+    writer = csv.writer(response, quoting=csv.QUOTE_ALL)
 
     # write the first row (header)
     writer.writerow(header)
@@ -437,7 +437,7 @@ def generate_internal_report(request):
                         "following into the email: <br> " + query)
                 new_record = {}
                 new_record['name'] = project_name  # Primary Comments
-                new_record['fopal'] = '"'+clean_fopal(fopal)+'"'  # Customer Account Number
+                new_record['fopal'] = clean_fopal(fopal) # Customer Account Number
                 # new_record['trans'] = str(int(request.GET['month']))+'/'+str(day)+'/'+request.GET['year']
                 # new_record['trans'] = (
                 #     str(day) + '-' + calendar.month_abbr[int(request.GET['month'])].upper() + '-' + request.GET['year'][
@@ -448,16 +448,15 @@ def generate_internal_report(request):
                 new_record['unit'] = 'Hour'  # Unit (hours)
                 new_record['rate'] = str(rate)  # Hourly rate
                 new_record['category'] = cores_display  # (cost_lib.getCORESName(record[3]))		# Service Category
-                new_record['secondary_comments'] = '"' + record[2] + ' ' + record[
-                    3] + '"'  # Secondary comments (always empty?)
+                new_record['secondary_comments'] = record[2] + ' ' + record[3]  # Secondary comments (always empty?)
                 new_record['fpi'] = fpi  # Financially responsible PI (formatted as: "Last,First MI")
-                new_record['pi'] = '"' + (pi) + '"'  # Purchasers Last Name (PI we're working with)
-                new_record['pi_email'] = '"' + (pi_email) + '"'  # PI Email Address
-                new_record['activity_code'] = '"' + (activity_code) + '"'  # Activity Code
-                new_record['center'] = '""'  # Short Contributing Center Name
-                new_record['resource'] = '""'  # Resource Name
-                new_record['login'] = '"' + record[5] + '"'  # Line Item Assistant (netID of the user)
-                new_record['comment'] = '"' + record[2] + ' ' + record[3] + '"'  # Line Item Comment
+                new_record['pi'] = pi  # Purchasers Last Name (PI we're working with)
+                new_record['pi_email'] = pi_email  # PI Email Address
+                new_record['activity_code'] = activity_code  # Activity Code
+                new_record['center'] = ''  # Short Contributing Center Name
+                new_record['resource'] = ''  # Resource Name
+                new_record['login'] =  record[5]   # Line Item Assistant (netID of the user)
+                new_record['comment'] = record[2] + ' ' + record[3]  # Line Item Comment
 
                 # do we already have this record?
                 added = False
@@ -473,13 +472,13 @@ def generate_internal_report(request):
             # now loop through the collective rows, and write them
             for record in records:
                 new_record = []
-                new_record.append('"474287"')
+                new_record.append('474287')
                 new_record.append(record['name'])
                 new_record.append(record['hours'])
-                new_record.append('""')
+                new_record.append('')
                 new_record.append(record['trans'])
-                new_record.append('""')
-                new_record.append('""')
+                new_record.append('')
+                new_record.append('')
                 new_record.append(record['pi_email'])
                 new_record.append(record['fopal'])
                 new_record.append(record['activity_code'])
