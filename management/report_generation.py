@@ -462,7 +462,7 @@ def generate_internal_report(request):
                 added = False
                 for rec in records:
                     if rec['name'] == new_record['name'] and rec['service'] == new_record['service'] \
-                            and rec['rate'] == new_record['rate'] and rec['login'] == new_record['login'] \
+                            and rec['rate'] == new_record['rate']  \
                             and rec['trans'] == new_record['trans']:
                         rec['hours'] += new_record['hours']
                         added = True
