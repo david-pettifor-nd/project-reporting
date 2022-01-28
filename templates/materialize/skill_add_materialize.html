@@ -1,0 +1,21 @@
+{% extends 'materialize/base_materialize.html' %}
+
+{% block content %}
+    <div class="container">
+    <br/>{{ context }}
+        <h5 class="orange-text">{{ skill_action }} {{ skill_name }}</h5>
+        <div class="divider"></div>
+        <form action="" method="post">{% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" class ="btn waves-effect waves-light blue" value="{{ skill_action }} Skill" />
+        </form>
+    </div>
+{% endblock content %}
+
+{% block extra_js %}
+    <script>
+        $(document).ready(function() {
+            $('select').material_select();
+        });
+    </script>
+{% endblock %}

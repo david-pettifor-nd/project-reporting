@@ -38,9 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'management',
     'django_extensions',
-    #'skillsmatrix.apps.SkillsmatrixConfig',
-    # used on prod for CAS authentication
-    # 'mama_cas',
+    'skillsmatrix.apps.SkillsmatrixConfig',
+    #'cas',
+    'mozilla_django_oidc',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -87,7 +87,7 @@ DATABASES = {
         'NAME': 'redmine',
         'USER': 'redmine',
         'PASSWORD': 'redminepass',
-        'HOST': 'localhost',
+        'HOST': '129.74.246.37',
         'PORT': '5432'
     }
 }
@@ -134,7 +134,7 @@ STATICFILES_DIRS = [
     'static',
 ]
 
-STATIC_ROOT = '/var/www/'
+STATIC_ROOT = '/opt/services/djangoapp/static/'
 
 # actual login and logout urls (since we're in a sub-part of the site)
 LOGIN_URL = '/reports/accounts/login/'
@@ -142,3 +142,5 @@ LOGOUT_URL = '/reports/accounts/logout/'
 
 # Custom field name that represents the log as categories:
 LOGGING_CATEGORY_NAME = 'Log As'
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

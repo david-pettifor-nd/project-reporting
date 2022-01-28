@@ -6,6 +6,7 @@ from django.db import connection
 from django.shortcuts import HttpResponse, render
 
 from time_tools import date_working_hours, manager_date_working_hours
+from .models import *
 
 
 @login_required
@@ -18,8 +19,9 @@ def planning_home(request):
     # connect to our database
     cur = connection.cursor()
 
+    # parent_id = 458 is CSSR projects, so we'll omit those
     cur.execute("SELECT projects.id, name FROM projects INNER JOIN custom_values ON custom_values.customized_id = "
-                "projects.id WHERE custom_field_id = 17 AND value = '1';")
+                "projects.id WHERE custom_field_id = 17 AND value = '1' AND (projects.parent_id IS NULL OR projects.parent_id != 458);")
     projects = cur.fetchall()
     context['projects'] = []
     total_required = 0
@@ -236,7 +238,7 @@ def get_planning_projection(request):
 
     # get the current internal rate
     cur.execute(
-        "SELECT rate FROM charge_rates WHERE internal = TRUE AND category = 'Programming' "
+        "SELECT rate FROM charge_rates WHERE internal = TRUE AND category = 'Programming (internal)' "
         "and start_date <= CURRENT_DATE and end_date >= CURRENT_DATE LIMIT 1;")
     rate = cur.fetchone()[0]
 
@@ -392,3 +394,127 @@ def add_assignment(request):
     connection.commit()
 
     return HttpResponse('200')
+
+@login_required
+def get_monthly_assignments(request):
+    cur = connection.cursor()
+
+    monthly_data = []
+    cur.execute('''SELECT CONCAT(users.firstname, ' ', users.lastname), projects.name, percentage FROM project_distribution INNER JOIN users on project_distribution.user = users.id INNER JOIN projects ON projects.id = project_distribution.project
+    WHERE "user" IN  (SELECT users.id FROM USERS INNER JOIN programmers ON programmers.user_id = users.id WHERE programmers.active = TRUE)
+    AND "from" <= CURRENT_DATE AND "to" >= CURRENT_DATE order by CONCAT(users.firstname, ' ', users.lastname);''')
+    data = cur.fetchall()
+    num_funded = 0
+    for d in data:
+        num_funded += d[2]
+    monthly_data.append({
+        'total_num_funded': num_funded,
+        'raw_assignemnts': data
+    })
+
+
+    cur.execute('''SELECT CONCAT(users.firstname, ' ', users.lastname), projects.name, percentage FROM project_distribution INNER JOIN users on project_distribution.user = users.id INNER JOIN projects ON projects.id = project_distribution.project
+    WHERE "user" IN  (SELECT users.id FROM USERS INNER JOIN programmers ON programmers.user_id = users.id WHERE programmers.active = TRUE)
+    AND "from" <= CURRENT_DATE + interval '1 month' AND "to" >= CURRENT_DATE + interval '1 month' order by CONCAT(users.firstname, ' ', users.lastname);''')
+    data = cur.fetchall()
+    num_funded = 0
+    for d in data:
+        num_funded += d[2]
+    monthly_data.append({
+        'total_num_funded': num_funded,
+        'raw_assignemnts': data
+    })
+
+    cur.execute('''SELECT CONCAT(users.firstname, ' ', users.lastname), projects.name, percentage FROM project_distribution INNER JOIN users on project_distribution.user = users.id INNER JOIN projects ON projects.id = project_distribution.project
+    WHERE "user" IN  (SELECT users.id FROM USERS INNER JOIN programmers ON programmers.user_id = users.id WHERE programmers.active = TRUE)
+    AND "from" <= CURRENT_DATE + interval '2 month' AND "to" >= CURRENT_DATE + interval '2 month' order by CONCAT(users.firstname, ' ', users.lastname);''')
+    data = cur.fetchall()
+    num_funded = 0
+    for d in data:
+        num_funded += d[2]
+    monthly_data.append({
+        'total_num_funded': num_funded,
+        'raw_assignemnts': data
+    })
+
+    cur.execute('''SELECT CONCAT(users.firstname, ' ', users.lastname), projects.name, percentage FROM project_distribution INNER JOIN users on project_distribution.user = users.id INNER JOIN projects ON projects.id = project_distribution.project
+    WHERE "user" IN  (SELECT users.id FROM USERS INNER JOIN programmers ON programmers.user_id = users.id WHERE programmers.active = TRUE)
+    AND "from" <= CURRENT_DATE + interval '3 month' AND "to" >= CURRENT_DATE + interval '3 month' order by CONCAT(users.firstname, ' ', users.lastname);''')
+    data = cur.fetchall()
+    num_funded = 0
+    for d in data:
+        num_funded += d[2]
+    monthly_data.append({
+        'total_num_funded': num_funded,
+        'raw_assignemnts': data
+    })
+
+    cur.execute('''SELECT CONCAT(users.firstname, ' ', users.lastname), projects.name, percentage FROM project_distribution INNER JOIN users on project_distribution.user = users.id INNER JOIN projects ON projects.id = project_distribution.project
+    WHERE "user" IN  (SELECT users.id FROM USERS INNER JOIN programmers ON programmers.user_id = users.id WHERE programmers.active = TRUE)
+    AND "from" <= CURRENT_DATE + interval '4 month' AND "to" >= CURRENT_DATE + interval '4 month' order by CONCAT(users.firstname, ' ', users.lastname);''')
+    data = cur.fetchall()
+    num_funded = 0
+    for d in data:
+        num_funded += d[2]
+    monthly_data.append({
+        'total_num_funded': num_funded,
+        'raw_assignemnts': data
+    })
+
+    cur.execute('''SELECT CONCAT(users.firstname, ' ', users.lastname), projects.name, percentage FROM project_distribution INNER JOIN users on project_distribution.user = users.id INNER JOIN projects ON projects.id = project_distribution.project
+    WHERE "user" IN  (SELECT users.id FROM USERS INNER JOIN programmers ON programmers.user_id = users.id WHERE programmers.active = TRUE)
+    AND "from" <= CURRENT_DATE + interval '5 month' AND "to" >= CURRENT_DATE + interval '5 month' order by CONCAT(users.firstname, ' ', users.lastname);''')
+    data = cur.fetchall()
+    num_funded = 0
+    for d in data:
+        num_funded += d[2]
+    monthly_data.append({
+        'total_num_funded': num_funded,
+        'raw_assignemnts': data
+    })
+
+    cur.execute('''SELECT CONCAT(users.firstname, ' ', users.lastname), projects.name, percentage FROM project_distribution INNER JOIN users on project_distribution.user = users.id INNER JOIN projects ON projects.id = project_distribution.project
+    WHERE "user" IN  (SELECT users.id FROM USERS INNER JOIN programmers ON programmers.user_id = users.id WHERE programmers.active = TRUE)
+    AND "from" <= CURRENT_DATE + interval '6 month' AND "to" >= CURRENT_DATE + interval '6 month' order by CONCAT(users.firstname, ' ', users.lastname);''')
+    data = cur.fetchall()
+    num_funded = 0
+    for d in data:
+        num_funded += d[2]
+    monthly_data.append({
+        'total_num_funded': num_funded,
+        'raw_assignemnts': data
+    })
+
+    context = {
+        'monthly_data': monthly_data
+    }
+    return HttpResponse(json.dumps(context))
+
+
+@login_required
+def get_all_active_project_funding(request):
+    active_projects_ids = CustomValues.objects.filter(custom_field_id=CustomFields.objects.get(name='Active Project').id, value = '1').values_list('customized_id', flat=True)
+    projects = Projects.objects.filter(id__in=active_projects_ids)
+    number_of_weeks_to_project = 39
+    weekly_date = datetime.datetime.today()
+    x_axis_categories = []
+    for week in range(number_of_weeks_to_project):
+        x_axis_categories.append(weekly_date.strftime('%b %d'))
+        weekly_date = weekly_date + datetime.timedelta(days=7)
+
+    chart_data = []
+    for p in projects:
+        if p.start_date and p.end_date and not p.is_cssr_project and (
+            datetime.datetime.today() <= p.start_date and p.start_date <= datetime.datetime.today() + datetime.timedelta(days=270) or \
+            datetime.datetime.today() <= p.end_date and p.end_date <= datetime.datetime.today() + datetime.timedelta(days=270) or \
+            p.start_date <= datetime.datetime.today() and p.end_date > datetime.datetime.today() + datetime.timedelta(days=270)
+        ):
+            series = {'name': p.name, 'data': p.get_remaining_spend_series(delta=(number_of_weeks_to_project*7))}
+            if len(series['data']) > 0 and max(series['data']) > 0:
+                chart_data.append(series)
+
+    context = {
+        'x_axis_categories': x_axis_categories,
+        'chart_data': chart_data
+    }
+    return HttpResponse(json.dumps(context))

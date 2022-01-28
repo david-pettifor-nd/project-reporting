@@ -1,0 +1,338 @@
+{% extends 'materialize/base_materialize.html' %}
+{% load static %}
+{% block extra_js %}
+    <script src="{% static 'Highcharts/highcharts.js' %}"></script>
+    <script src="{% static 'Highcharts/modules/heatmap.js' %}"></script>
+    <script src="{% static 'Highcharts/modules/exporting.js' %}"></script>
+    <script type="text/javascript">
+        var count_skill_boxes = 0; // Number of skills initially selected
+        var count_dev_boxes = 0; // Number of devs initially selected
+        $(document).ready(function () {
+
+            $("#filter_status").text("No filters applied");
+
+            var dev_count = 0;
+            var skill_count = 0;
+
+            $(".devbox").each(function () {
+                dev_count += 1;
+            });
+            $(".skillbox").each(function () {
+                skill_count += 1;
+            });
+
+            $("#selectAllDevBtn").click(function () {
+                $(".devbox").each(function () {
+                    $(this).prop('checked', true);
+                });
+                count_dev_boxes = dev_count;
+                enableApplyFilters();
+            });
+
+            $("#deselectAllDevBtn").click(function () {
+                $(".devbox").each(function () {
+                    $(this).prop('checked', false);
+                    count_dev_boxes = 0;
+                });
+                enableApplyFilters();
+            });
+
+            $("#selectAllSkillBtn").click(function () {
+                $(".skillbox").each(function () {
+                    $(this).prop('checked', true);
+                });
+                count_skill_boxes = skill_count;
+                enableApplyFilters();
+            });
+
+            $("#deselectAllSkillBtn").click(function () {
+                $(".skillbox").each(function () {
+                    $(this).prop('checked', false);
+                    count_skill_boxes = 0;
+                });
+                enableApplyFilters();
+            });
+
+            $(".filterApply").click(function () {
+                if ($(this).hasClass('disabled')) {
+                    alert("You must select at least one skill and one developer!");
+                }
+                else {
+                    collapseAll();
+                    var skills_filters = [];
+                    $(".skillbox").each(function () {
+                        if ($(this).is(':checked')) {
+                            skills_filters.push($(this).val());
+                        }
+                    });
+                    var dev_filters = [];
+                    $(".devbox").each(function () {
+                        if ($(this).is(':checked')) {
+                            dev_filters.push($(this).val());
+                        }
+                    });
+                    var filter_data = {'skills': skills_filters, 'devs': dev_filters};
+
+                    $.ajax({
+                        method: "GET",
+                        url: "{% url "filter_matrix" %}",
+                        data: filter_data
+                    }).done(function (contextdata) {
+                        developers = contextdata["dev_names"];
+                        skills = contextdata["skill_names"];
+                        dev_skills = contextdata["dev_skills"];
+
+                        // Set the filter status
+                        var num_skills = skills.length;
+                        var num_devs = developers.length;
+
+                        $("#filter_status").text(num_devs.toString() + " developers, " + num_skills.toString() + " skills");
+
+                        // Adjust the heatmap
+                        Highcharts.chart('skillmatrix', {
+                            chart: {
+                                type: 'heatmap',
+                                marginTop: 40,
+                                marginBottom: 80,
+                                plotBorderWidth: 1
+                            },
+                            title: {
+                                text: 'Skills Matrix'
+                            },
+                            xAxis: {
+                                categories: developers
+                            },
+                            yAxis: {
+                                categories: skills,
+                                title: null
+                            },
+                            colorAxis: {
+                                min: 0,
+                                minColor: '#FFFFFF',
+                                max: 3,
+                                maxColor: Highcharts.getOptions().colors[0]
+                            },
+                            legend: {
+                                enabled: false
+                            },
+                            tooltip: {
+                                formatter: function () {
+                                    return '<b>' + this.series.xAxis.categories[this.point.x] + '</b> has proficiency of <br><b>' +
+                                            getProficiencyString(this.point.value) + '</b> in <br><b>' + this.series.yAxis.categories[this.point.y]
+                                            + '</b>';
+                                }
+                            },
+                            series: [{
+                                name: 'Employee Skills',
+                                borderWidth: 1,
+                                data: dev_skills,
+                                dataLabels: {
+                                    enabled: true,
+                                    color: '#000000',
+                                    formatter: function () {
+                                        return getMatrixProficiencyString(this.point.value);
+                                    }
+                                },
+                                navigation: {
+                                    buttonOptions: {
+                                        verticalAlign: 'bottom',
+                                        y: -20
+                                    }
+                                }
+                            }]
+                        });
+
+                    });
+                }
+            });
+
+            Highcharts.chart('skillmatrix', {
+
+                chart: {
+                    type: 'heatmap',
+                    marginTop: 40,
+                    marginBottom: 80,
+                    plotBorderWidth: 1
+                },
+
+
+                title: {
+                    text: 'Skills Matrix'
+                },
+
+                xAxis: {
+                    categories: {{ developers | safe }}
+                },
+
+                yAxis: {
+                    categories: {{ skills | safe }},
+                    title: null
+                },
+
+                colorAxis: {
+                    min: 0,
+                    minColor: '#FFFFFF',
+                    maxColor: Highcharts.getOptions().colors[0]
+                },
+
+                legend: {
+                    enabled: false
+                },
+
+                tooltip: {
+                    formatter: function () {
+                        return '<b>' + this.series.xAxis.categories[this.point.x] + '</b> has <br><b>' +
+                                getProficiencyString(this.point.value) + '</b> proficiency in <br><b>' + this.series.yAxis.categories[this.point.y]
+                                + '</b>';
+                    }
+                },
+
+                series: [{
+                    name: 'Employee Skills',
+                    borderWidth: 1,
+                    data: {{ devskills }},
+                    dataLabels: {
+                        enabled: true,
+                        color: '#000000',
+                        formatter: function () {
+                            return getMatrixProficiencyString(this.point.value);
+                        }
+                    },
+                    navigation: {
+                        buttonOptions: {
+                            verticalAlign: 'bottom',
+                            y: -20
+                        }
+                    }
+                }]
+            });
+
+            // Count how many skills are selected
+            $('#skill-col :checkbox').change(function () {
+                // this will contain a reference to the checkbox
+                if (this.checked) {
+                    // the checkbox is now checked
+                    count_skill_boxes += 1;
+                } else {
+                    // the checkbox is now no longer checked
+                    count_skill_boxes -= 1;
+                }
+                enableApplyFilters();
+            });
+
+            // Count how many developers are selected
+            $('#dev-col :checkbox').change(function () {
+                // this will contain a reference to the checkbox
+                if (this.checked) {
+                    // the checkbox is now checked
+                    count_dev_boxes += 1;
+                } else {
+                    // the checkbox is now no longer checked
+                    count_dev_boxes -= 1;
+                }
+                enableApplyFilters();
+            });
+        });
+
+        function enableApplyFilters() {
+            if (count_skill_boxes >= 1 && count_dev_boxes >= 1) {
+                $('.filterApply').removeClass('disabled').addClass('waves-effect waves-light');
+            } else {
+                $('.filterApply').removeClass('waves-effect waves-light').addClass('disabled');
+            }
+        }
+
+        function collapseAll() {
+            $(".collapsible-header").removeClass(function () {
+                return "active";
+            });
+            $(".collapsible").collapsible({accordion: true});
+            $(".collapsible").collapsible({accordion: false});
+        }
+
+        function getProficiencyString(prof_value) {
+            var prof_string = "no";
+            if (prof_value == 1) {
+                prof_string = "Low";
+            } else if (prof_value == 2) {
+                prof_string = "Medium";
+            } else if (prof_value == 3) {
+                prof_string = "High";
+            }
+            return prof_string;
+        }
+
+        function getMatrixProficiencyString(prof_value) {
+            var prof_string = "";
+            if (prof_value == 1) {
+                prof_string = "Low";
+            } else if (prof_value == 2) {
+                prof_string = "Medium";
+            } else if (prof_value == 3) {
+                prof_string = "High";
+            }
+            return prof_string;
+        }
+    </script>
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <ul class="collapsible popout" data-collapsible="accordion">
+            <li>
+                <div class="collapsible-header blue-text">
+                    <i class="material-icons">add</i>
+                    Filter
+                    <span id="filter_status" class="orange-text pull-right"></span>
+                </div>
+                <div class="collapsible-body">
+                    <form>
+                        <div class="row">
+                            <div id="skill-col" class="col sm3" style="padding-left: 75px;  padding-right: 75px">
+                                <br/>
+                                <h5>Skills</h5>
+                                <div class="row filter-btn-row">
+                                    <a class="btn waves-effect waves-light orange filter-btn-xs" id="selectAllSkillBtn">All</a>
+                                    <a class="btn waves-effect waves-light orange filter-btn-xs"
+                                       id="deselectAllSkillBtn">None</a>
+                                </div>
+                                {% for skill in skills %}
+                                    <input type="checkbox" id="{{ skill }}-skill" class="my-orange-checkbox skillbox"
+                                           value="{{ skill }}"/>
+                                    <label for="{{ skill }}-skill">{{ skill }}</label>
+                                    <br/>
+                                {% endfor %}
+                            </div>
+                            <div id="dev-col" class="col sm3" style="padding-left: 75px; padding-right: 75px">
+                                <br/>
+                                <h5>Developers</h5>
+                                <div class="row filter-btn-row">
+                                    <a class="btn waves-effect waves-light orange filter-btn-xs" id="selectAllDevBtn">All</a>
+                                    <a class="btn waves-effect waves-light orange filter-btn-xs" id="deselectAllDevBtn">None</a>
+                                </div>
+                                {% for dev in dev_filter_list %}
+                                    <input type="checkbox" id="{{ dev.last_name }}-developer"
+                                           class="my-orange-checkbox devbox"
+                                           value="{{ dev.id }}"/>
+                                    <label for="{{ dev.last_name }}-developer">{{ dev.first_name }} {{ dev.last_name }}</label>
+                                    <br/>
+                                {% endfor %}
+                            </div>
+                            <div class="col sm3 right-align"
+                                 style="padding-left: 50px; padding-right: 50px; padding-top: 25px">
+                                <a class="btn blue filterApply disabled" id="applyFilterBtn-top">
+                                    <i class="fa fa-filter left-align"></i>Apply
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row right-align" style="padding-left: 50px; padding-right: 50px">
+                            <a class="btn blue filterApply disabled" id="applyFilterBtn-bottom">
+                                <i class="fa fa-filter left-align"></i>Apply
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </li>
+        </ul>
+        <div id="skillmatrix" style="height: 1000px; min-width: 1000px; max-width: 1500px; margin: 0 auto"></div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,205 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+    <title>Skills Matrix</title>
+
+    <!-- CSS  -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="{% static 'materialize/css/materialize.css' %}" type="text/css" rel="stylesheet"
+          media="screen,projection"/>
+    <link rel="stylesheet" href="{% static 'font-awesome-4.7.0/css/font-awesome.min.css' %}">
+    <link href="{% static 'css/style.css' %}" type="text/css" rel="stylesheet" media="screen,projection"/>
+    <link href="{% static 'css/matrix_styles.css' %}" type="text/css" rel="stylesheet" media="screen,projection"/>
+</head>
+<body>
+
+<!-- Dropdown Structure -->
+<ul id="dropdown1" class="dropdown-content">
+    <li><a class="blue-text" href="{% url "my_developer_details" %}">My Page</a></li>
+</ul>
+
+<!-- Nav Bar -->
+<nav class="blue lighten-1" role="navigation">
+    <div class="nav-wrapper container"><a id="logo-container" href="{% url 'home_page' %}" class="brand-logo">Skills
+        Matrix</a>
+        <ul class="right hide-on-med-and-down">
+            <li>
+                <a href="{% url 'home_page' %}">Home</a>
+            </li>
+            <li>
+                <a href="{% url 'developer_list' %}">Developers</a>
+            </li>
+            <li>
+                <a href="{% url 'skills_list' %}">Skills</a>
+            </li>
+            <li>
+                <a href="{% url 'create_extra_credit' %}">Extra Credit
+{#                    {% if extracredit_tokens and is_developer %}#}
+{#                        <span class="badge orange white-text">{{ extracredit_tokens }}</span>#}
+{#                    {% endif %}#}
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'matrix' %}">Matrix</a>
+            </li>
+            <!-- Dropdown Trigger -->
+            <li>
+                <a class="dropdown-button" href="#" data-activates="dropdown1" data-beloworigin="true">
+                    {{ request.user }}
+                    <i class="material-icons right">arrow_drop_down</i>
+                </a>
+            </li>
+        </ul>
+        <!-- Mobile Nav Bar -->
+        <ul id="nav-mobile" class="side-nav">
+            <li><a href="{% url 'home_page' %}" class="blue-text">Home</a></li>
+            <li><a href="{% url 'developer_list' %}" class="blue-text">Developers</a></li>
+            <li><a href="{% url 'skills_list' %}" class="blue-text">Skills</a></li>
+            <li>
+                <a href="{% url 'skills_list' %}" class="blue-text">Extra Credit
+{#                {% if extracredit_tokens and is_developer %}#}
+{#                    <span class="badge orange white-text">{{ extracredit_tokens }}</span>#}
+{#                {% endif %}#}
+                </a>
+            </li>
+            <li><a href="{% url 'matrix' %}" class="blue-text">Matrix</a></li>
+            <li><a href="{% url "my_developer_details" %}" class="blue-text">My Page</a></li>
+            <li>
+                <div class="divider"></div>
+            </li>
+            <li><a href="https://crc.nd.edu/" class="orange-text" target="_blank">CRC Website</a></li>
+            <li><a href="{% url 'scrum_resources' %}" class="orange-text">Scrum Resources</a></li>
+        </ul>
+        <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+    </div>
+</nav>
+
+<main>
+    {% block content %}
+        <!-- Center text -->
+        <div class="section no-pad-bot" id="index-banner">
+            <div class="container">
+                <br><br>
+
+                <h1 class="header center orange-text">Employee Skills Matrix</h1>
+
+                <div class="row center">
+                    <h5 class="header col s12 light">Keep track of skills to better utilize talent and place employees
+                        on teams and projects that will interest and challenge them.</h5>
+                </div>
+                <br/>
+            </div>
+        </div>
+
+
+        <div class="container">
+            <div class="section">
+                <div class="row center-cols center-align">
+                    <div class="col m3">
+                        <div class="card small blue">
+
+                            <div class="card-content white-text">
+                                <span class="card-title"><i
+                                        class="material-icons image-margin">people</i>Developers</span>
+                                <p>All CRC developers have an account on Skills Matrix.</p>
+                            </div>
+                            <div class="card-action orange">
+                                <a class="white-text" href="{% url 'developer_list' %}">View developers</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col m3">
+                        <div class="card small blue">
+
+                            <div class="card-content white-text">
+                                <span class="card-title"><i class="material-icons image-margin">work</i>Skills</span>
+                                <p>Self report your skills on your developer page.</p>
+                            </div>
+                            <div class="card-action orange">
+                                <a class="white-text" href="{% url 'skills_list' %}">View all skills</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col m3">
+                        <div class="card small blue">
+
+                            <div class="card-content white-text">
+                                <span class="card-title"><i
+                                        class="material-icons image-margin">assessment</i>Matrix</span>
+                                <p>See who has experience with a particular skill.</p>
+                            </div>
+                            <div class="card-action orange">
+                                <a class="white-text" href="{% url 'matrix' %}">View skills matrix</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="section">
+                <div class="container">
+                    <div class="row center">
+                        <i class="material-icons large blue-text">sentiment_very_satisfied</i>
+                        <h5 class="header col s12 light"><a
+                                href="http://www.gallup.com/businessjournal/167462/employees-strengths-company-stronger.aspx"
+                                target="_blank"> Research</a> suggests that employees who use their strengths every day
+                            are six times more likely to be engaged on the job.<br><br>
+                            Engagement has been shown to increase when managers focus on employees' strengths.<br><br>
+                            Furthermore, focusing on employees' strengths directly relates to improved well-being. </h5>
+                    </div>
+                    <br>
+                    <br>
+                </div>
+            </div>
+        </div>
+    {% endblock content %}
+</main>
+
+<!-- FOOTER -->
+<footer class="page-footer orange">
+    <div class="container">
+        <div class="row">
+            <div class="col l6 s12">
+                <h5 class="white-text">Purpose</h5>
+
+                <p class="white-text text-lighten-4">
+                    Skillsmatrix is designed to allow developers in the CRC to self-report their skills to better
+                    utilize these talents and for use in forming Agile teams.
+                </p>
+            </div>
+            <div class="col l3 s12">
+
+            </div>
+            <div class="col l3 s12 ">
+                {#                <h5 class="white-text right right-align">Links</h5>#}
+                <ul class="right right-align">
+                    <li><a class="white-text" href="#!">About</a></li>
+                    <li><a class="white-text" href="https://crc.nd.edu/" target="_blank">CRC</a></li>
+                    <li><a class="white-text" href="{% url 'scrum_resources' %}">Scrum</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="footer-copyright">
+        <div class="container valign-wrapper">
+            <i class="material-icons" style="margin: 10px;">copyright</i>
+            2017 ND CRC -
+            <div class="right"> - Site designed using <a class="white-text"
+                                                         href="http://materializecss.com">Materialize</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+<!--  Scripts-->
+<script src="{% static 'jquery/jquery-2.2.4.min.js' %}"></script>
+<script src="{% static 'materialize/js/materialize.min.js' %}"></script>
+<script src="{% static 'materialize/js/init.js' %}"></script>
+{% block extra_js %} {% endblock extra_js %}
+</body>
+</html>

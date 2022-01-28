@@ -1,0 +1,32 @@
+{% extends 'materialize/base_materialize.html' %}
+{% load staticfiles %}
+
+{% block content %}
+    <div class="container">
+        <div class="row valign-wrapper">
+            <div class="col s6 m6">
+                <h4 class="blue-text valign">
+                    Give a developer extra credit!
+                </h4>
+            </div>
+            <div class="col s6 m6 right-align">
+                <div class="chip orange white-text">You have {{ my_tokens }} extra credit tokens</div>
+            </div>
+        </div>
+        <br/>
+        <form action="" method="post">{% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn waves-effect waves-light blue">Send
+                <i class="material-icons right">send</i>
+            </button>
+        </form>
+    </div>
+{% endblock content %}
+
+{% block extra_js %}
+    <script>
+        $(document).ready(function () {
+            $('select').material_select();
+        });
+    </script>
+{% endblock extra_js %}

@@ -1,0 +1,17 @@
+{% extends 'materialize/base_materialize.html' %}
+{% load staticfiles %}
+{% block content %}
+
+    <ul class="collection with-header container">
+        <li class="collection-header">
+            <h3 class="col s12 m6 orange-text valign-wrapper"><i class="material-icons title-icons medium">work</i>Skills</h3>
+        </li>
+        {% for object in object_list %}
+
+            <li class="collection-item">
+                <h5><a href="{{ object.id }}">{{ object.name }}</a></h5>
+                <div>{{ object.family }}</div>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

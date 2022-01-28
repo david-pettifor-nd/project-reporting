@@ -23,7 +23,7 @@
         <div class="panel-body">
             <div id='chart'></div>
 
-        <!------------- Prospective Project Modal ----------------------->
+        <!-- ----------- Prospective Project Modal -------------------- -->
 {#        <div id="prospective_project_modal" class="modal fade" role="dialog">#}
 {#            <div class="modal-dialog">#}
 {#                <div class="modal-content">#}
@@ -63,6 +63,32 @@
     </div>
         </div>
     </div>
+
+    <div class="col-lg-6">
+        <div class="col-lg-12">
+			<div class="panel panel-success">
+				<div class="panel-heading">
+				Developer Funding
+				</div>
+				<div class="panel-body">
+                    <div id="staffing_outlook_highchart" style="width:100%; height:400px;"></div>
+				</div>
+			</div>
+		</div>
+</div>
+
+    <div class="col-lg-6">
+        <div class="col-lg-12">
+			<div class="panel panel-success">
+				<div class="panel-heading">
+				Weekly Funds Available (Takes about 10 seconds to load)
+				</div>
+				<div class="panel-body">
+                    <div id="weekly_spend_highchart" style="width:100%; height:400px;"></div>
+				</div>
+			</div>
+		</div>
+</div>
     <div class="col-lg-6" style="display: none;" id="active_project">
 		<div class="col-lg-12">
 			<div class="panel panel-success">
@@ -137,6 +163,7 @@
 				</div>
 			</div>
 		</div>
+
 	</div>
     </div>
 
@@ -241,6 +268,7 @@
     <script src="/static/js/jquery-ui.js" integrity="sha256-eGE6blurk5sHj+rmkfsGYeKyZx3M4bG+ZlFyA7Kns7E=" crossorigin="anonymous"></script>
         <script language="javascript" src='/static/js/vis.js'></script>
 	<script language="javascript" src='/static/js/bootstrap-datepicker.min.js'></script>
+        <script src="https://code.highcharts.com/highcharts.js"></script>
 	{% if user.is_staff %}
 	<script language="javascript">
 		var selected_project = null;
@@ -512,7 +540,110 @@
             });
         }
 
+
+        function FetchDeveloperStaffingOutlook(){
+            $.ajax({
+                url: '../get_monthly_assignments',
+                dataType: 'json',
+                success: function(data){
+                    var totals = [];
+                    console.log(data.monthly_data)
+                    data.monthly_data.forEach(element => totals.push(element.total_num_funded));
+
+                    Highcharts.chart('staffing_outlook_highchart', {
+                        chart: {
+                            type: 'line'
+                        },
+                        title: {
+                            text: 'Developer Assignments'
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'Number of Developers'
+                            }
+                        },
+                        series: [{
+                            name: 'Programmers Assigned',
+                            data: totals
+                        },
+                        {
+                            name: 'Programmers to Fund',
+                            data: [14,14,14,14,14,14,14]
+                        }]
+                    });
+                },
+                error: function(){
+                    alert("Failed to get general developer information.");
+                }
+            });
+        }
+
+        function FetchWeeklySpend(){
+            $.ajax({
+                url: '../get_all_active_project_funding',
+                dataType: 'json',
+                success: function(data){
+                    var totals = [];
+                    console.log(data.chart_data)
+                    Highcharts.chart('weekly_spend_highchart', {
+                        chart: {
+                            type: 'area'
+                        },
+                        title: {
+                            text: 'Developers Funded by Week'
+                        },
+                        subtitle: {
+                            text: 'Assuming 38 billable hours/week average'
+                        },
+                        xAxis: {
+                            categories: data.x_axis_categories,
+                            tickmarkPlacement: 'on',
+                            title: {
+                                enabled: false
+                            }
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'Developers Funded'
+                            }
+                        },
+                        tooltip: {
+                            split: true,
+                            valueSuffix: ' devs'
+                        },
+                        legend: {
+                            layout: 'vertical',
+                            align: 'right',
+                            verticalAlign: 'middle',
+                        },
+                        plotOptions: {
+                            area: {
+                                stacking: 'normal',
+                                lineColor: '#666666',
+                                lineWidth: 1,
+                                marker: {
+                                    lineWidth: 1,
+                                    lineColor: '#666666'
+                                }
+                            },
+                            series: {
+                                marker: {
+                                    enabled: false
+                                }
+                            }
+                        },
+                        series: data.chart_data
+                    });
+                },
+                error: function(){
+                    alert("Failed to get general developer information.");
+                }
+            });
+        }
+
 		$(document).ready(function(){
+            FetchDeveloperStaffingOutlook();
+            FetchWeeklySpend();
             UpdateDeveloperAssignments();
 
             $('#activate_developer').click(function(){

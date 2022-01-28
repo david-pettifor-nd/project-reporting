@@ -17,7 +17,7 @@
 <body>
 <nav id="nav_bar" class="navbar navbar-default" role="navigation">
     <div class="container-fluid">
-        <a class="navbar-brand" href="../home">Redmine Time Entries</a>
+	    <a class="navbar-brand" href="{% url 'home' %}">Redmine Time Entries</a>
         <ul class="nav navbar-nav">
             <li><a href="{% url 'home' %}">Home</a></li>
             <li><a href="{% url 'time_entries' %}">Entries</a></li>

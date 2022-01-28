@@ -1,0 +1,120 @@
+{% extends 'materialize/base_materialize.html' %}
+
+{% block content %}
+    <nav class="transparent z-depth-0">
+        <div class="nav-wrapper">
+            <div class="col s12 container">
+                <a href="{% url 'my_developer_details' %}" class=" breadcrumb my-breadcrumb">
+                    <i class="material-icons orange-text">keyboard_arrow_left</i>
+                    Back to My Developer Details</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <ul class="collapsible" data-collapsible="expandable">
+            {% for family in skill_family_list %}
+                <li>
+                    <div class="collapsible-header"><i class="material-icons orange-text">add_circle</i>{{ family }}</div>
+                    <div class="collapsible-body">
+                            <ul class="collection" style="overflow: visible;">
+                                {% for devskill in my_skills %}
+                                    {% if devskill.skill.family == family %}
+                                        <li class="collection-item" style="height: 100%;">
+                                        <div class="row skillrow" data-skillid="{{ devskill.id }}">
+                                            <div class="col s4">
+                                                <input type="checkbox" class="my-orange-checkbox has-skill" id="{{ devskill.skill.id }}-hasSkill"
+                                                       {% if devskill.has_skill %}checked="checked"{% endif %}>
+                                                <label for="{{ devskill.skill.id }}-hasSkill" class="has-skill-label blue-text" id="{{ devskill.skill.name }}">
+                                                    {% if devskill.skill.skill_url %}<a href="{{ devskill.skill.skill_url }}" target="_blank">{% endif %}{{ devskill.skill.name }}</a>
+                                                </label>
+                                            </div>
+                                            <div class="col s4">
+                                                <label for="{{ devskill.skill.id }}-proficiency">Proficiency:</label>
+                                                <select id="{{ devskill.skill.id }}-proficiency" name="proficiency"
+                                                        class="skill-proficiency">
+                                                    <option value="" {% if devskill.proficiency == None or devskill.proficiency == 'None'%}selected{% endif %}>---------</option>
+                                                    <option value="1" {% if devskill.proficiency == 1 %}selected{% endif %}>Low</option>
+                                                    <option value="2" {% if devskill.proficiency == 2 %}selected{% endif %}>Medium</option>
+                                                    <option value="3" {% if devskill.proficiency == 3 %}selected{% endif %}>High</option>
+                                                </select>
+                                            </div>
+                                            <div class="col s4">
+                                                <label for="{{ devskill.skill.id }}-experience">Years of experience:</label>
+                                                <input id="{{ devskill.skill.id }}-experience" name="years_of_experience"
+                                                       class="skill-experience"
+                                                       type="number" value="{{ devskill.years_of_experience }}" min="0" max="50"/>
+                                            </div>
+                                        </div>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    <div class="row">
+<a class="waves-effect waves-light btn pull-right blue" id="update_skills_btn">Update my skills</a></div>
+    </div>
+{% endblock content %}
+
+{% block extra_js %}
+    <script>
+        $(document).ready(function () {
+            $('select').material_select();
+
+            $('#update_skills_btn').click(function(){
+                var skills = [];
+                var skill_errs_no_fields= [];
+                $('.skillrow').each(function(){
+                    var skill_obj = {};
+
+                    skill_obj.id = $(this).data("skillid");
+                    skill_obj.has_skill = $(this).find(".has-skill").prop('checked');
+
+                    proficiency_val = parseInt($(this).find('select.skill-proficiency').val());
+                    skill_obj.proficiency = isNaN(proficiency_val)?null:proficiency_val;
+
+                    experience_val = parseInt($(this).find(".skill-experience").val());
+                    skill_obj.years_of_experience = isNaN(experience_val)?null:experience_val;
+
+                    skill_name = $(this).find(".has-skill-label").attr('id');
+
+                    if(skill_obj.has_skill && (skill_obj.proficiency===null |
+                            (skill_obj.years_of_experience===null | skill_obj.years_of_experience===0))) {
+                        skill_err_obj = {
+                            'skill_obj': skill_obj,
+                            'skill_name': skill_name
+                        };
+                        skill_errs_no_fields.push(skill_err_obj);
+                    }
+                    skills.push(skill_obj);
+                });
+
+                // If there are no errors in the list, do the ajax call
+                if(skill_errs_no_fields.length == 0) {
+                    $.ajax(
+                        {
+                            type:'POST',
+                            url:'{% url 'bulk_update_skills' %}',
+                            dataType: 'json',
+                            data: {
+                                skills_list: JSON.stringify(skills),
+                                csrfmiddlewaretoken: '{{ csrf_token }}'
+                                },
+                            success: function(json) {
+                                console.log("Success");
+                                alert("Changes have been saved!");
+                            }
+                        }
+                    );
+                } else {
+                    var error_string = "Proficiency and years of experience are required.\n\nPlease fix the following skills:\n\n";
+                    for (var i = 0; i < skill_errs_no_fields.length; i++)
+                        error_string+=(skill_errs_no_fields[i].skill_name + "\n")
+                    alert(error_string)
+                }
+            });
+        });
+    </script>
+{% endblock %}

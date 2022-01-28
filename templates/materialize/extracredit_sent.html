@@ -1,0 +1,22 @@
+{% extends 'materialize/base_materialize.html' %}
+{% load staticfiles %}
+
+{% block content %}
+    <div class="container">
+    <div class="center-align" style="padding-top: 100px">
+        <h4>Your extra credit has been sent!</h4>
+        <div class="row" style="padding-top: 75px">
+             <div class="chip orange white-text">You have {{ my_tokens }} extra credit tokens</div>
+        </div>
+        {% if my_tokens > 0 %}
+            <div class="row" style="padding-top: 100px">
+                <a class="waves-effect waves-light btn-large blue" href="{% url 'create_extra_credit' %}">
+                    <i class="material-icons left">send</i>Send More Extra Credit</a>
+            </div>
+        {% endif %}
+        {% if my_tokens == 0 or not my_tokens%}
+            <h5 class="blue-text">You need more extra credit tokens to send extra credit!</h5>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}

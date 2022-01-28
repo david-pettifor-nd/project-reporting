@@ -176,7 +176,7 @@ def get_entries_home(request):
         "select users.firstname, users.lastname, users.login, max(CASE WHEN " \
                 "(time_entries.tmonth >= '%(month)s' and time_entries.tyear <= '%(year)s') THEN 2 ELSE 1 end) AS t " \
                 "from users inner join time_entries on time_entries.user_id = users.id " \
-                "GROUP BY users.login, users.firstname, users.lastname ORDER BY t desc, users.firstname;" % {
+                "where status != 3 GROUP BY users.login, users.firstname, users.lastname ORDER BY t desc, users.firstname;" % {
                     'month': month, 'year': year})
     users = cur.fetchall()
     print users

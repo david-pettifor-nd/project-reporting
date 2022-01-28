@@ -18,7 +18,8 @@ from django.contrib import admin
 from django.conf.urls import include
 
 from management.planning import planning_home, get_all_dev_assignments, get_assignments, get_planning_projection, \
-    developer_assignments, deactivate, activate, update_supervisor, remove_assignment, add_assignment
+    developer_assignments, deactivate, activate, update_supervisor, remove_assignment, add_assignment, get_monthly_assignments, \
+    get_all_active_project_funding
 
 from management.home import home, get_entries_home, get_distribution
 from management.time_entries import entries_home, get_date_range, get_project_activities, update_entries, delete_entry
@@ -57,7 +58,7 @@ urlpatterns = [
     url(r'^get_entities/$', get_entries, name="get_entities"),
 
 
-    # url(r'^skillsmatrix/', include('skillsmatrix.urls')),
+    url(r'^skillsmatrix/', include('skillsmatrix.urls')),
 
 
     # ------------- Marcy's Report Generator for CORES -----------#
@@ -82,6 +83,8 @@ urlpatterns = [
     url(r'^update_supervisor/$', update_supervisor, name='update_supervisor'),
     url(r'^remove_project_distribution_entry/$', remove_assignment, name='remove_assignment'),
     url(r'^add_developer/$', add_assignment, name='add_developer'),
+    url(r'^get_monthly_assignments/$', get_monthly_assignments, name='get_monthly_assignments'),
+    url(r'^get_all_active_project_funding/$', get_all_active_project_funding, name='get_all_active_project_funding'),
 
     # Adjustable Rates
     url(r'^rates/$', rates_home, name='rates_home'),
@@ -97,12 +100,13 @@ urlpatterns = [
     url(r'^weekly_report/$', weekly_report_form_url, name='weekly_report'),
 
     # Used if on production for CAS authentication
-    # url(r'^accounts/login/$', 'cas.views.login', name='login'),
-    # url(r'^accounts/logout/$', 'cas.views.logout', name='logout'),
-
+    #url(r'^accounts/login/$', 'cas.views.login', name='login'),
+    #url(r'^accounts/logout/$', 'cas.views.logout', name='logout'),
+    
+    url(r'^oidc/', include('mozilla_django_oidc.urls')),
     # OR you can use these login pages:
-    url(r'^accounts/login/$', login_page, name='login'),
-    url(r'^accounts/logout/$', logout_request, name='logout'),
+    #url(r'^accounts/login/$', login_page, name='login'),
+    #url(r'^accounts/logout/$', logout_request, name='logout'),
 
 
 ]
