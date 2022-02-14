@@ -19,7 +19,7 @@ from django.conf.urls import include
 
 from management.planning import planning_home, get_all_dev_assignments, get_assignments, get_planning_projection, \
     developer_assignments, deactivate, activate, update_supervisor, remove_assignment, add_assignment, get_monthly_assignments, \
-    get_all_active_project_funding
+    get_all_active_project_funding, update_assignment, get_project_cost_projection
 
 from management.home import home, get_entries_home, get_distribution
 from management.time_entries import entries_home, get_date_range, get_project_activities, update_entries, delete_entry
@@ -82,9 +82,12 @@ urlpatterns = [
     url(r'^activate_developer/$', activate, name='activate'),
     url(r'^update_supervisor/$', update_supervisor, name='update_supervisor'),
     url(r'^remove_project_distribution_entry/$', remove_assignment, name='remove_assignment'),
+    url(r'^update_project_distribution_entry', update_assignment, name='update_assignment'),
     url(r'^add_developer/$', add_assignment, name='add_developer'),
+    url(r'^get_project_cost_projection', get_project_cost_projection, name='get_project_cost_projection'),
     url(r'^get_monthly_assignments/$', get_monthly_assignments, name='get_monthly_assignments'),
     url(r'^get_all_active_project_funding/$', get_all_active_project_funding, name='get_all_active_project_funding'),
+
 
     # Adjustable Rates
     url(r'^rates/$', rates_home, name='rates_home'),

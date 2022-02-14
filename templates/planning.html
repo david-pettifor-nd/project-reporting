@@ -103,11 +103,19 @@
 								<td>Effort</td>
 								<td>Starting</td>
 								<td>Ending</td>
+                                <td>Save</td>
                                 <td>Remove</td>
 							</tr>
 						</thead>
 						<tbody id='assignee_table'>
-							<tr id="fte_row_template" style="display: none;"><td rel="name">Name</td><td rel="effort">1.0</td><td rel="start"></td><td rel="end"></td><td rel="del"><button type="button" class="btn btn-danger"><i class="fa fa-remove"></i></button></td></tr>
+							<tr id="fte_row_template" data-id="" style="display: none;">
+                                <td rel="name"></td>
+                                <td><input class="form-control" rel="effort" type="number" placeholder="1.0"></input></td>
+                                <td><input class="form-control" rel="start" type="date" placeholder="YYY-MM-DD"></input></td>
+                                <td><input class="form-control" rel="end" type="date" placeholder="YYY-MM-DD"></input></td>
+                                <td rel="save"><button type="button" class="btn btn-success"><i class="fa fa-save"></i></button></td>
+                                <td rel="del"><button type="button" class="btn btn-danger"><i class="fa fa-remove"></i></button></td>
+                            </tr>
 						</tbody>
 						<span id="no_assignees" style="display: none;">No one is assigned to this project!</span>
 					</table>
@@ -143,6 +151,7 @@
 				Project Information and Projections <!--<button type="button" id="activate_project" class="btn btn-sm btn-success" style="float: right; position: relative; top: -5px;"><i class="fa fa-check"></i> Activate</button>--><span style="float: right; margin-right: 20px;" id="project_budget"></span>
 				</div>
 				<div class="panel-body">
+                    <div id="cost_projection_chart" class="projection-chart"></div>
 					<table class="table table-hover">
 						<tbody>
 							<tr>
@@ -344,27 +353,6 @@
                 remove: false,
                 updateGroup: false
             },
-{#            onMove: function(item, callback){#}
-{#                // what is the new start date?#}
-{#                //console.log(item);#}
-{##}
-{#                var start = item.start.toUTCString();#}
-{#                var end = item.end.toUTCString();#}
-{#                var id = item.id;#}
-{##}
-{#                $.ajax({#}
-{#                    url: '../update_project_times',#}
-{#                    data: {id: id, start: start, end: end},#}
-{#                    success: function(){#}
-{#                        UpdateProjectInfo(id);#}
-{#                        callback(item);#}
-{#                    },#}
-{#                    error: function(){#}
-{#                        alert("There was an error in moving the project.");#}
-{#                        callback(null);#}
-{#                    }#}
-{#                });#}
-{#            }#}
         };
 
         function UpdateProjectInfo(project_id){
@@ -398,10 +386,11 @@
 						for(var i = 0; i < data.assignees.length; i++){
 							// copy the row
 							var row = document.getElementById('fte_row_template').cloneNode(true);
+                            $(row).attr('data-id', data.assignees[i][6]);
 							$(row).find('[rel="name"]').html(data.assignees[i][1] + ' ' + data.assignees[i][2]);
-							$(row).find('[rel="effort"]').html(data.assignees[i][3]);
-							$(row).find('[rel="start"]').html(data.assignees[i][4]);
-							$(row).find('[rel="end"]').html(data.assignees[i][5]);
+							$(row).find('[rel="effort"]').val(data.assignees[i][3]);
+							$(row).find('[rel="start"]').val(data.assignees[i][4]);
+							$(row).find('[rel="end"]').val(data.assignees[i][5]);
                             $(row).find('[rel="del"] button').attr('id', 'del_'+data.assignees[i][6]);
                             $(row).find('[rel="del"] button').click(function(){
                                 var entry_id = this.id.split('_')[1];
@@ -417,6 +406,31 @@
                                     error: function(){
 
                                         alert("Failed to remove person from project assignment.");
+                                    }
+                                });
+                            });
+                            $(row).find('[rel="save"] button').attr('id', 'save_'+data.assignees[i][6]);
+                            $(row).find('[rel="save"] button').click(function(){
+                                var entry_id = this.id.split('_')[1];
+                                var row = $('[data-id="'+entry_id+'"]');
+                                $.ajax({
+                                   url: '../update_project_distribution_entry',
+                                    data: {
+                                        entry_id: entry_id,
+                                        effort: $(row).find('[rel="effort"]').val(),
+                                        start_date: $(row).find('[rel="start"]').val(),
+                                        end_date: $(row).find('[rel="end"]').val()
+                                    },
+                                    success: function(data){
+                                        if(data == 200) {
+                                            UpdateProjectInfo(selected_project);
+                                            UpdateDeveloperAssignments();
+                                            alert("Developer updated.");
+                                        }
+                                    },
+                                    error: function(){
+
+                                        alert("Failed to save developer's project assignment.");
                                     }
                                 });
                             });
@@ -445,7 +459,7 @@
                     dataType: 'json',
                     success: function(data){
                         $('#project_budget').html('$'+data.project_budget.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
-                        $('#cost_at_target_end').html('$'+data.planned_spending.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+                        // $('#cost_at_target_end').html('$'+data.planned_spending.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
                         $('#active_project').show();
 
                     },
@@ -453,6 +467,171 @@
                         alert("Failed to load projection data.");
                     }
                 });
+            $('#cost_projection_chart').html('').append('<i class="fa fa-gear fa-spin"></i> Crunching some numbers...');
+            $('#cost_projection_chart').addClass('projection-chart-loading');
+            $.ajax({
+                url: '../get_project_cost_projection',
+                data: {'project_id': selected_project},
+                dataType: 'json',
+                success: function(data){
+                    $('#cost_projection_chart').removeClass('projection-chart-loading');
+                    $('#cost_projection_chart').html('');
+                    PopulateProjectionChart(data);
+                },
+                error: function(){
+                    alert("Failed to load projection data.");
+                }
+            });
+        }
+
+        function PopulateProjectionChart(data){
+            var max = data['budget'];
+            if(data.assignment_burn_rate.length > 0){
+                var last_assignment_cost = data.assignment_burn_rate[(data.assignment_burn_rate.length - 1)];
+                if(last_assignment_cost.cost > max){
+                    max = last_assignment_cost.cost;
+                }
+            }
+
+            // update the cost at project end
+            $('#cost_at_target_end').html('').html('$'+max.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+
+            var data_array = [];
+            var spending_zones = [];
+            var current_zone = null;
+            for(var i = 0; i < data.cost_to_date.length; i++){
+                if(current_zone == null){
+                    current_zone = data.cost_to_date[i].over;
+                }
+
+                // do we need to change zones?
+                if(current_zone != data.cost_to_date[i].over){
+                    // what color do we add?
+                    if(data.cost_to_date[i].over){
+                        // this means we WERE under, but now over...so the previous zone should be green.
+                        spending_zones.push({
+                            value: Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
+                            color: 'green'
+                        });
+                    }
+                    else{
+                        // otherwise we are now under, but we WERE over, so the previous zone should be red.
+                        spending_zones.push({
+                            value: Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
+                            color: 'red'
+                        });
+                    }
+                    // now update it!
+                    current_zone = data.cost_to_date[i].over;
+                }
+
+                data_array.push([
+                        Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
+                        data.cost_to_date[i].sum
+                ]);
+                if(data.cost_to_date[i].sum > max){
+                    max = data.cost_to_date[i].sum;
+                }
+            }
+
+            // if we have no spending zones...add one
+
+            // what color do we add?
+            if(current_zone == false){
+                // this means we WERE under, but now over...so the previous zone should be green.
+                spending_zones.push({
+                    value: Date.UTC(data.cost_to_date[i-1].spent_on[0], (data.cost_to_date[i-1].spent_on[1]-1), data.cost_to_date[i-1].spent_on[2]),
+                    color: 'green'
+                });
+            }
+            else{
+                // otherwise we are now under, but we WERE over, so the previous zone should be red.
+                spending_zones.push({
+                    value: Date.UTC(data.cost_to_date[i-1].spent_on[0], (data.cost_to_date[i-1].spent_on[1]-1), data.cost_to_date[i-1].spent_on[2]),
+                    color: 'red'
+                });
+            }
+
+            var series = [{'name': 'Cost to Date', data: data_array, zoneAxis: 'x', zones: spending_zones}];
+            
+            // do we have a target burn rate?
+            if(data.target_burn_days.length > 0){
+                var target_array = [];
+                for(var i = 0; i < data.target_burn_days.length; i++){
+                        target_array.push([
+                        Date.UTC(data.target_burn_days[i].spent_on[0], (data.target_burn_days[i].spent_on[1]-1), data.target_burn_days[i].spent_on[2]),
+                        parseFloat(data.target_burn_days[i].sum)
+                    ]);
+                }
+
+                series.push({
+                    'name': 'Target Burn Rate',
+                    data: target_array
+                })
+            }
+
+            // now make a series for the assignment burn rate
+            var assignment_series = [];
+            for(var i = 0; i < data.assignment_burn_rate.length; i++){
+                assignment_series.push([
+                Date.UTC(data.assignment_burn_rate[i].date[0], (data.assignment_burn_rate[i].date[1]-1), data.assignment_burn_rate[i].date[2]),
+                parseFloat(data.assignment_burn_rate[i].cost)
+                ])
+            }
+            series.push({
+                'name': 'Assignment Burn Rate',
+                data: assignment_series,
+                color: '#425df5'
+            })
+
+
+           
+            Highcharts.chart('cost_projection_chart', {
+                chart: {
+                    type: 'line',
+                    zoomType: 'xy'
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    type: 'datetime',
+                    dateTimeLabelFormats: {
+                        month: '%e. %b',
+                        year: '%b'
+                    },
+                    title: {
+                        text: 'Date'
+                    },
+                },
+                yAxis: {
+                    title: {
+                        text: 'Cost ($)'
+                    },
+                    min: 0,
+                    max: max,
+                    plotLines: [
+                        {
+                            color: 'red',
+                            dashStyle: 'shortdash',
+                            value: data.budget,
+                            width: 2
+                        }
+                    ]
+                },
+                plotOptions: {
+                    series: {
+                        marker: {
+                            enabled: false
+                        }
+                    }
+                },
+                tooltip: {
+                    headerFormat: '<b>{series.name}</b><br/>',
+                    pointFormat: '{point.x:%b %e %Y}: ${point.y}'
+                },
+                series: series,
+            });
         }
 
         function UpdateDeveloperAssignments(){

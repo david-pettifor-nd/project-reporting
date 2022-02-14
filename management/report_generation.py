@@ -4,7 +4,7 @@ from django.db import connection
 import datetime
 import calendar  # used for converting month integers to text
 import csv
-import costs
+from . import costs
 
 
 class RedmineProject:
@@ -98,8 +98,6 @@ def check_fopal(fopal=''):
 
 
 def get_billing_date(month, year):
-    print "month:", month
-    print "current:", datetime.datetime.now().month
     if str(datetime.datetime.now().month) != str(month) or str(datetime.datetime.now().year) !=str(year) :
         day = calendar.monthrange(int(year), int(month))[1]
     else:
@@ -169,7 +167,6 @@ def report_generator_home(request):
     else:
         required_list += 'NULL'
     required_list += ')'
-    print required_list
 
     # gather a summation of all un-accounted hours that are not part of any of the projects we have listed
     today = datetime.date.today()
@@ -276,9 +273,6 @@ def generate_internal_report(request):
         required_list += project + ','
     required_list = required_list[:-1] + ')'
 
-    print required_list
-    print len(required_list.split(','))
-
     # NOTE: Here is an explination of what should be gathered:
     #  service_id:  hard coded value for CRC
     #  note: Project Name
@@ -290,9 +284,6 @@ def generate_internal_report(request):
     #  pi_email_or_group_id:  Redmine field PI email for the project
     #  payment_number:  FOPAL
     #  activity_code:  If the Payment number included an Activity code list it here
-   
-
-    print len(project_list[0])
 
     if len(project_list[0]) != 0:
         # for each project in our list, gather all of the data we need!
@@ -361,7 +352,6 @@ def generate_internal_report(request):
                     fpi = fpi[0][0]
                     sfpi = fpi.split(' ')
                     fpi = sfpi[1] + ', ' + sfpi[0]
-                    print fpi
                 except:
                     fpi = ''
             else:
@@ -545,8 +535,6 @@ def generate_csr_report(request):
     #  Resource Name:		None
     #  Line Item Assistant:		NetID of user
     #  Line Item Comments:		None
-
-    # print len(project_list[0])
 
     if len(project_list[0]) != 0:
         # for each project in our list, gather all of the data we need!
@@ -763,8 +751,6 @@ def generate_external_report(request):
     #  Line Item Assistant:		NetID of user
     #  Line Item Comments:		None
 
-    print len(project_list[0])
-
     if len(project_list[0]) != 0:
         # for each project in our list, gather all of the data we need!
         for project in project_list:
@@ -777,7 +763,6 @@ def generate_external_report(request):
             for parent in project_list:
                 # add exception for HPC parent project
                 if str(parent_id) == str(parent):
-                    print 'Found in list...skipping'
                     found = True
             if found:
                 continue

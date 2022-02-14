@@ -1,0 +1,37 @@
+version: '3'
+
+volumes:
+     pgdata:
+
+services:
+  postgresql:
+    image: project_reporting_db:postgres
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    restart: always
+    ports:
+      - 127.0.0.1:5432:5432
+    environment:
+      POSTGRES_USER: 'redmine'
+      POSTGRES_PASSWORD: 'redminepass'
+      DATABASE_NAME: 'redmine'
+    volumes:
+    - .:/app/
+    - pgdata:/var/lib/postgresql/data   # <- important!  the `/var/lib/postgresql/data` mounting point for your container is where postgresql's default data location is!
+
+  djangoweb:
+    image: project_reporting:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+    - .:/app/
+    ports:
+      - 127.0.0.1:8000:8000
+    environment:
+      DJANGO_SETTINGS_MODULE: 'pr.settings.development'
+    depends_on:
+      - postgresql
+    links:
+      - "postgresql:database"

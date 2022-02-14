@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.shortcuts import HttpResponse, render
 
-from time_tools import date_working_hours, manager_date_working_hours
 from .models import *
+from .time_tools import date_working_hours, manager_date_working_hours
 
 
 @login_required
@@ -396,6 +396,20 @@ def add_assignment(request):
     return HttpResponse('200')
 
 @login_required
+def update_assignment(request):
+    cur = connection.cursor()
+
+    cur.execute(
+        "UPDATE project_distribution "
+        "SET percentage = %s, \"from\" = %s, \"to\" = %s"
+        " WHERE id = %s;", (request.GET['effort'], request.GET['start_date'], request.GET['end_date'], request.GET['entry_id'])
+    )
+   
+    connection.commit()
+
+    return HttpResponse('200')
+
+@login_required
 def get_monthly_assignments(request):
     cur = connection.cursor()
 
@@ -518,3 +532,104 @@ def get_all_active_project_funding(request):
         'chart_data': chart_data
     }
     return HttpResponse(json.dumps(context))
+
+def get_target_on(target_list, date):
+    for target in target_list:
+        if date == target['spent_on']:
+            return target['sum']
+
+@login_required
+def get_project_cost_projection(request):
+    project = Projects.objects.get(id=request.GET['project_id'])
+
+    # cost to date
+    cost_to_date = project.get_cost_to_date()
+
+    # figure out the budget
+    budget_category = CustomFields.objects.get(name__icontains='budget')
+    budget = CustomValues.objects.filter(customized_id=project.id, custom_field_id=budget_category.id)
+    if len(budget) == 1:
+        budget = budget[0].value
+    else:
+        budget = 0.0
+
+    if budget is None or budget == '':
+        budget = 0.0
+    
+    # run through the cost to date and figure out for each point if we were over or under our target
+    target_burn_rate = project.get_target_burn_rate()
+    if len(target_burn_rate) > 0:
+        for spending in cost_to_date:
+            # if our spending is over the budget, mark it over regardless
+            if float(spending['sum']) > float(budget):
+                spending['over'] = True
+                continue
+            target = get_target_on(target_burn_rate, spending['spent_on'])
+            if target is None:
+                # just assume not over
+                spending['over'] = False
+            else:
+                if float(spending['sum']) <= float(target):
+                    spending['over'] = False
+                else:
+                    spending['over'] = True
+    else:
+        for spending in cost_to_date:
+            # if our spending is over the budget, mark it over regardless
+            if float(spending['sum']) > float(budget):
+                spending['over'] = True
+            else:
+                spending['over'] = False
+
+    # starting at today, what will future assignments look like in terms of cost?
+    date_iter = datetime.datetime.now().today()
+    assignment_burn_rate = []
+    accumulation = cost_to_date[-1]['sum']
+    last_rate = 0.0
+    while date_iter <= project.end_date:
+        date_cost = 0.0
+        # is this a weekend?
+        # saturday = 5 and sunday = 6
+        if date_iter.weekday() <= 4:
+            # what kind of assignment load do we have?
+            for assignment in ProjectDistribution.objects.filter(
+                project=project.id,
+                from_field__lte=date_iter,
+                to__gte=date_iter
+            ):
+                # take the FTE load
+                fte = assignment.percentage
+
+                # figure out our charge rate (for normal development)
+                rate = ChargeRates.objects.filter(
+                    start_date__lte=date_iter,
+                    end_date__gte=date_iter,
+                    category='Programming (internal)'
+                )
+                if len(rate) >= 1:
+                    cost_rate = rate.first().rate
+                    last_rate = cost_rate
+                else:
+                    cost_rate = last_rate
+
+                # that's per hour, so assume 8 hours a day and figure out the total cost for this assignment
+                date_cost += (8.0 * float(fte)) * float(cost_rate)
+            accumulation += date_cost
+        assignment_burn_rate.append({
+            'date': date_iter.strftime('%Y, %m, %d').split(', '),
+            'cost': accumulation
+        })
+        date_iter += datetime.timedelta(days=1)
+
+
+    return HttpResponse(
+        json.dumps(
+            {
+                'cost_to_date': cost_to_date,
+                'project_id': project.id,
+                'budget': budget,
+                'target_burn_days': target_burn_rate,
+                'assignment_burn_rate': assignment_burn_rate
+            }
+        )
+    )

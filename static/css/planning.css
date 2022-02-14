@@ -2,3 +2,16 @@
     background-color: #F6D5D5 !important;
     border-color: #F89797 !important;
 }
+
+.projection-chart{
+    display: block;
+    width: 100%;
+    min-height: 300px;
+}
+
+.projection-chart-loading{
+    text-align: center;
+    font-size: 24px;
+    color: #515151;
+    padding-top: 100px;
+}

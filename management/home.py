@@ -1,7 +1,7 @@
 from django.shortcuts import HttpResponse, render
 from django.db import connection
 import datetime
-from holidays import get_holidays
+from .holidays import get_holidays
 import calendar
 import json
 from django.contrib.auth.decorators import login_required
@@ -60,7 +60,6 @@ def get_entries_home(request):
             'month': month, 'year': year, 'user': target, 'order': order_by})
 
     entries = cur.fetchall()
-    print entries
 
     # assemble into a list
     entry_list = []
@@ -179,7 +178,6 @@ def get_entries_home(request):
                 "where status != 3 GROUP BY users.login, users.firstname, users.lastname ORDER BY t desc, users.firstname;" % {
                     'month': month, 'year': year})
     users = cur.fetchall()
-    print users
     # loop through the users, constructing a dictionary
     user_list = []
     for u in users:

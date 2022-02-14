@@ -598,6 +598,159 @@ class Projects(models.Model):
             return None
         else:
             return active_project[0].value == '1'
+    
+    def get_cost_to_date(self):
+        spent_on_dict = {}
+        data = []
+        total = 0.0
+        time_entries = TimeEntries.objects.filter(project_id=self.id).order_by('spent_on')
+        last_known_cost = 0
+        for entry in time_entries:
+            # does the activity have "non-billable" in the name?
+            activity = Enumerations.objects.get(id=entry.activity_id)
+            if 'non-billable' in activity.name.lower():
+                continue
+
+            # get the category for this entry
+            category = CustomValues.objects.get(customized_id=entry.id)
+            # get the rate for this date
+            rate = ChargeRates.objects.filter(start_date__lte=entry.spent_on,
+                                              end_date__gte=entry.spent_on,
+                                              category=category.value)
+            if len(rate) >= 1:
+                cost_rate = rate[0].rate
+                last_known_cost = cost_rate
+            else:
+                cost_rate = last_known_cost
+
+            total += (entry.hours * int(cost_rate))
+            spent_on_dict[entry.spent_on] = total
+
+        for key,val in spent_on_dict.items():
+            data.append({
+                'spent_on': key.strftime('%Y, %m, %d').split(', '),
+                'sum': val
+            })
+
+        actual = sorted(data, key=lambda k: k['spent_on'])
+
+        # now fill in the gaps...
+        boundary_start = None
+        boundary_end = None
+        days_to_add = []
+        for entry in actual:
+            if boundary_start is None:
+                boundary_start = entry
+                continue
+            if boundary_end is None:
+                boundary_end = entry
+
+            # at this point, we should have a boundary start (previous date)
+            #   and a boundary end (current date)
+            # is their difference greater than 1 day between the two?
+            if (datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days > 1:
+                # then compute the difference
+                # cost_change = boundary_end['sum'] - boundary_start['sum']
+
+                # how many days difference?
+                days_difference = (datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days
+
+                # how much per day do we averagely increase?  (is averagely a word?  probably not...)
+                # cost_difference_per_day = float(cost_change) / float(days_difference)
+
+                # now add the days/difference
+                current = datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d') + datetime.timedelta(days=1)
+                current_sum = boundary_start['sum'] #+ cost_difference_per_day
+                ending = datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d')
+                while current < ending:
+                    days_to_add.append({
+                        'spent_on': current.strftime('%Y, %m, %d').split(', '),
+                        'sum': float("%.2f" % current_sum)
+                    })
+                    current += datetime.timedelta(days=1)
+                    # current_sum += cost_difference_per_day
+            boundary_start = boundary_end
+            boundary_end = entry
+
+        # the last boundary still needs to be checked...
+        if (datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime(
+                '-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days > 1:
+            # then compute the difference
+            # cost_change = boundary_end['sum'] - boundary_start['sum']
+
+            # how many days difference?
+            days_difference = (
+            datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime(
+                '-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days
+
+            # how much per day do we averagely increase?  (is averagely a word?  probably not...)
+            # cost_difference_per_day = float(cost_change) / float(days_difference)
+
+            # now add the days/difference
+            current = datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d') + datetime.timedelta(
+                days=1)
+            current_sum = boundary_start['sum']  # + cost_difference_per_day
+            ending = datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d')
+            while current < ending:
+                days_to_add.append({
+                    'spent_on': current.strftime('%Y, %m, %d').split(', '),
+                    'sum': float("%.2f" % current_sum)
+                })
+                current += datetime.timedelta(days=1)
+
+
+        if len(days_to_add) > 0:
+            total = actual + days_to_add
+            total = sorted(total, key=lambda k: k['spent_on'])
+        else:
+            total = actual
+
+        return total
+
+
+    def get_target_burn_rate(self):
+            target_sum_to_date = 0
+
+            start_date = CustomValues.objects.filter(customized_id=self.id,
+                                                custom_field_id=CustomFields.objects.get(name='Start Date').id)
+            if start_date is None or len(start_date) == 0 or start_date[0].value == '':
+                # print "No start date found"
+                return []
+
+
+            end_date = CustomValues.objects.filter(customized_id=self.id,
+                                                custom_field_id=CustomFields.objects.get(name='Target End Date').id)
+            if end_date is None or len(end_date) == 0 or end_date[0].value == '':
+                # print "No end date found"
+                return []
+
+            budget = CustomValues.objects.filter(customized_id=self.id,
+                                                custom_field_id=CustomFields.objects.get(name='Budget $').id)
+
+            if budget is None or len(budget) == 0 or budget[0].value == '':
+                # print "No budget found"
+                return []
+
+            # how many days are there?
+            start = datetime.datetime.strptime(start_date[0].value, '%Y-%m-%d')
+            end = datetime.datetime.strptime(end_date[0].value, '%Y-%m-%d')
+
+            day_count = (end - start).days + 1
+            # print dir(day_count)
+            spend_per_day = float(budget[0].value) / float(day_count)
+            # print "target spending:", spend_per_day, "per day"
+
+            target_burn_days = []
+            current_date = start
+            while current_date <= end:
+                target_sum_to_date += spend_per_day
+                target_burn_days.append({
+                    'spent_on': current_date.strftime('%Y, %m, %d').split(', '),
+                    'sum': ('%.2f' % target_sum_to_date)
+                })
+                current_date += datetime.timedelta(days=1)
+
+            return target_burn_days
 
     def is_in_active_time(self, start_date=None, end_date=None, delta=None):
         if start_date:
@@ -643,7 +796,7 @@ class Projects(models.Model):
         week_count = round(((end - start).days + 1)/7.0, 2)
         # print dir(day_count)
         spend_per_week = max(round(((remaining / float(week_count)) / 38.0) / 77.0, 1), 0)
-        print "target spending:", spend_per_week, "per week"
+        # print "target spending:", spend_per_week, "per week"
 
         series_start = start_date if start_date else start
         if end_date:
@@ -1104,154 +1257,10 @@ class ProductOwnerProjects(models.Model):
             return self.owner.username + ': ' + self.project.name
 
     def get_cost_to_date(self):
-        spent_on_dict = {}
-        data = []
-        total = 0.0
-        time_entries = TimeEntries.objects.filter(project_id=self.project.id).order_by('spent_on')
-        for entry in time_entries:
-            # does the activity have "non-billable" in the name?
-            activity = Enumerations.objects.get(id=entry.activity_id)
-            if 'non-billable' in activity.name.lower():
-                continue
-
-            # get the category for this entry
-            category = CustomValues.objects.get(customized_id=entry.id)
-            # get the rate for this date
-            rate = ChargeRates.objects.filter(start_date__lte=entry.spent_on,
-                                              end_date__gte=entry.spent_on,
-                                              category=category.value)
-            if len(rate) >= 1:
-                cost_rate = rate[0].rate
-            else:
-                cost_rate = 0
-
-            total += (entry.hours * int(cost_rate))
-            spent_on_dict[entry.spent_on] = total
-
-        for key,val in spent_on_dict.iteritems():
-            data.append({
-                'spent_on': key.strftime('%Y, %m, %d').split(', '),
-                'sum': val
-            })
-
-        actual = sorted(data, key=lambda k: k['spent_on'])
-
-        # now fill in the gaps...
-        boundary_start = None
-        boundary_end = None
-        days_to_add = []
-        for entry in actual:
-            if boundary_start is None:
-                boundary_start = entry
-                continue
-            if boundary_end is None:
-                boundary_end = entry
-
-            # at this point, we should have a boundary start (previous date)
-            #   and a boundary end (current date)
-            # is their difference greater than 1 day between the two?
-            if (datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days > 1:
-                # then compute the difference
-                # cost_change = boundary_end['sum'] - boundary_start['sum']
-
-                # how many days difference?
-                days_difference = (datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days
-
-                # how much per day do we averagely increase?  (is averagely a word?  probably not...)
-                # cost_difference_per_day = float(cost_change) / float(days_difference)
-
-                # now add the days/difference
-                current = datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d') + datetime.timedelta(days=1)
-                current_sum = boundary_start['sum'] #+ cost_difference_per_day
-                ending = datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d')
-                while current < ending:
-                    days_to_add.append({
-                        'spent_on': current.strftime('%Y, %m, %d').split(', '),
-                        'sum': float("%.2f" % current_sum)
-                    })
-                    current += datetime.timedelta(days=1)
-                    # current_sum += cost_difference_per_day
-            boundary_start = boundary_end
-            boundary_end = entry
-
-        # the last boundary still needs to be checked...
-        if (datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime(
-                '-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days > 1:
-            # then compute the difference
-            # cost_change = boundary_end['sum'] - boundary_start['sum']
-
-            # how many days difference?
-            days_difference = (
-            datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime(
-                '-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days
-
-            # how much per day do we averagely increase?  (is averagely a word?  probably not...)
-            # cost_difference_per_day = float(cost_change) / float(days_difference)
-
-            # now add the days/difference
-            current = datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d') + datetime.timedelta(
-                days=1)
-            current_sum = boundary_start['sum']  # + cost_difference_per_day
-            ending = datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d')
-            while current < ending:
-                days_to_add.append({
-                    'spent_on': current.strftime('%Y, %m, %d').split(', '),
-                    'sum': float("%.2f" % current_sum)
-                })
-                current += datetime.timedelta(days=1)
-
-
-        if len(days_to_add) > 0:
-            total = actual + days_to_add
-            total = sorted(total, key=lambda k: k['spent_on'])
-        else:
-            total = actual
-
-        return total
+        return self.project.get_cost_to_date()
 
     def get_target_burn_rate(self):
-        target_sum_to_date = 0
-
-        start_date = CustomValues.objects.filter(customized_id=self.project.id,
-                                              custom_field_id=CustomFields.objects.get(name='Start Date').id)
-        if start_date is None or len(start_date) == 0 or start_date[0].value == '':
-            # print "No start date found"
-            return []
-
-
-        end_date = CustomValues.objects.filter(customized_id=self.project.id,
-                                            custom_field_id=CustomFields.objects.get(name='Target End Date').id)
-        if end_date is None or len(end_date) == 0 or end_date[0].value == '':
-            # print "No end date found"
-            return []
-
-        budget = CustomValues.objects.filter(customized_id=self.project.id,
-                                            custom_field_id=CustomFields.objects.get(name='Budget $').id)
-
-        if budget is None or len(budget) == 0 or budget[0].value == '':
-            # print "No budget found"
-            return []
-
-        # how many days are there?
-        start = datetime.datetime.strptime(start_date[0].value, '%Y-%m-%d')
-        end = datetime.datetime.strptime(end_date[0].value, '%Y-%m-%d')
-
-        day_count = (end - start).days + 1
-        # print dir(day_count)
-        spend_per_day = float(budget[0].value) / float(day_count)
-        print "target spending:", spend_per_day, "per day"
-
-        target_burn_days = []
-        current_date = start
-        while current_date <= end:
-            target_sum_to_date += spend_per_day
-            target_burn_days.append({
-                'spent_on': current_date.strftime('%Y, %m, %d').split(', '),
-                'sum': ('%.2f' % target_sum_to_date)
-            })
-            current_date += datetime.timedelta(days=1)
-
-        return target_burn_days
+        return self.project.get_target_burn_rate()
 
     class Meta:
         ordering = ['owner', 'project__name']

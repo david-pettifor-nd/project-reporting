@@ -7,7 +7,9 @@ DATABASES = {
         'NAME': 'redmine',
         'USER': 'redmine',
         'PASSWORD': 'redminepass',
-        'HOST': 'localhost',
-        'PORT': '5444'
+        'HOST': 'postgresql',
+        'PORT': '5432'
     }
 }
+
+USE_TZ = False
