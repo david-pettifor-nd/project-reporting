@@ -31,6 +31,7 @@ from management.reports import weekly_report_form_url
 from management.rates import rates_home, save_rate, save_start_date, save_end_date, save_rates, delete_rates, \
     add_rates, add_single_category
 from management.auth import login_page, logout_request
+from django.conf import settings
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -58,7 +59,6 @@ urlpatterns = [
     url(r'^get_entities/$', get_entries, name="get_entities"),
 
 
-    url(r'^skillsmatrix/', include('skillsmatrix.urls')),
 
 
     # ------------- Marcy's Report Generator for CORES -----------#
@@ -113,3 +113,8 @@ urlpatterns = [
 
 
 ]
+
+if not settings.DEBUG:
+    urlpatterns.append(
+        url(r'^skillsmatrix/', include('skillsmatrix.urls'))
+    )

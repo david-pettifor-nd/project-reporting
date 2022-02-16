@@ -493,66 +493,70 @@
                 }
             }
 
+            var series = [];
+
             // update the cost at project end
             $('#cost_at_target_end').html('').html('$'+max.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
-
-            var data_array = [];
-            var spending_zones = [];
-            var current_zone = null;
-            for(var i = 0; i < data.cost_to_date.length; i++){
-                if(current_zone == null){
-                    current_zone = data.cost_to_date[i].over;
-                }
-
-                // do we need to change zones?
-                if(current_zone != data.cost_to_date[i].over){
-                    // what color do we add?
-                    if(data.cost_to_date[i].over){
-                        // this means we WERE under, but now over...so the previous zone should be green.
-                        spending_zones.push({
-                            value: Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
-                            color: 'green'
-                        });
+            if(data.cost_to_date.length > 0){
+                var data_array = [];
+                var spending_zones = [];
+                var current_zone = null;
+                for(var i = 0; i < data.cost_to_date.length; i++){
+                    if(current_zone == null){
+                        current_zone = data.cost_to_date[i].over;
                     }
-                    else{
-                        // otherwise we are now under, but we WERE over, so the previous zone should be red.
-                        spending_zones.push({
-                            value: Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
-                            color: 'red'
-                        });
+
+                    // do we need to change zones?
+                    if(current_zone != data.cost_to_date[i].over){
+                        // what color do we add?
+                        if(data.cost_to_date[i].over){
+                            // this means we WERE under, but now over...so the previous zone should be green.
+                            spending_zones.push({
+                                value: Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
+                                color: 'green'
+                            });
+                        }
+                        else{
+                            // otherwise we are now under, but we WERE over, so the previous zone should be red.
+                            spending_zones.push({
+                                value: Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
+                                color: 'red'
+                            });
+                        }
+                        // now update it!
+                        current_zone = data.cost_to_date[i].over;
                     }
-                    // now update it!
-                    current_zone = data.cost_to_date[i].over;
+
+                    data_array.push([
+                            Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
+                            data.cost_to_date[i].sum
+                    ]);
+                    if(data.cost_to_date[i].sum > max){
+                        max = data.cost_to_date[i].sum;
+                    }
                 }
 
-                data_array.push([
-                        Date.UTC(data.cost_to_date[i].spent_on[0], (data.cost_to_date[i].spent_on[1]-1), data.cost_to_date[i].spent_on[2]),
-                        data.cost_to_date[i].sum
-                ]);
-                if(data.cost_to_date[i].sum > max){
-                    max = data.cost_to_date[i].sum;
+                // if we have no spending zones...add one
+
+                // what color do we add?
+                if(current_zone == false){
+                    // this means we WERE under, but now over...so the previous zone should be green.
+                    spending_zones.push({
+                        value: Date.UTC(data.cost_to_date[i-1].spent_on[0], (data.cost_to_date[i-1].spent_on[1]-1), data.cost_to_date[i-1].spent_on[2]),
+                        color: 'green'
+                    });
                 }
+                else{
+                    // otherwise we are now under, but we WERE over, so the previous zone should be red.
+                    spending_zones.push({
+                        value: Date.UTC(data.cost_to_date[i-1].spent_on[0], (data.cost_to_date[i-1].spent_on[1]-1), data.cost_to_date[i-1].spent_on[2]),
+                        color: 'red'
+                    });
+                }
+                series.push(
+                    {'name': 'Cost to Date', data: data_array, zoneAxis: 'x', zones: spending_zones}
+                );
             }
-
-            // if we have no spending zones...add one
-
-            // what color do we add?
-            if(current_zone == false){
-                // this means we WERE under, but now over...so the previous zone should be green.
-                spending_zones.push({
-                    value: Date.UTC(data.cost_to_date[i-1].spent_on[0], (data.cost_to_date[i-1].spent_on[1]-1), data.cost_to_date[i-1].spent_on[2]),
-                    color: 'green'
-                });
-            }
-            else{
-                // otherwise we are now under, but we WERE over, so the previous zone should be red.
-                spending_zones.push({
-                    value: Date.UTC(data.cost_to_date[i-1].spent_on[0], (data.cost_to_date[i-1].spent_on[1]-1), data.cost_to_date[i-1].spent_on[2]),
-                    color: 'red'
-                });
-            }
-
-            var series = [{'name': 'Cost to Date', data: data_array, zoneAxis: 'x', zones: spending_zones}];
             
             // do we have a target burn rate?
             if(data.target_burn_days.length > 0){

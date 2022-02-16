@@ -673,30 +673,31 @@ class Projects(models.Model):
             boundary_end = entry
 
         # the last boundary still needs to be checked...
-        if (datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime(
-                '-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days > 1:
-            # then compute the difference
-            # cost_change = boundary_end['sum'] - boundary_start['sum']
+        if boundary_end and boundary_start:
+            if (datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime(
+                    '-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days > 1:
+                # then compute the difference
+                # cost_change = boundary_end['sum'] - boundary_start['sum']
 
-            # how many days difference?
-            days_difference = (
-            datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime(
-                '-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days
+                # how many days difference?
+                days_difference = (
+                datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d') - datetime.datetime.strptime(
+                    '-'.join(boundary_start['spent_on']), '%Y-%m-%d')).days
 
-            # how much per day do we averagely increase?  (is averagely a word?  probably not...)
-            # cost_difference_per_day = float(cost_change) / float(days_difference)
+                # how much per day do we averagely increase?  (is averagely a word?  probably not...)
+                # cost_difference_per_day = float(cost_change) / float(days_difference)
 
-            # now add the days/difference
-            current = datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d') + datetime.timedelta(
-                days=1)
-            current_sum = boundary_start['sum']  # + cost_difference_per_day
-            ending = datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d')
-            while current < ending:
-                days_to_add.append({
-                    'spent_on': current.strftime('%Y, %m, %d').split(', '),
-                    'sum': float("%.2f" % current_sum)
-                })
-                current += datetime.timedelta(days=1)
+                # now add the days/difference
+                current = datetime.datetime.strptime('-'.join(boundary_start['spent_on']), '%Y-%m-%d') + datetime.timedelta(
+                    days=1)
+                current_sum = boundary_start['sum']  # + cost_difference_per_day
+                ending = datetime.datetime.strptime('-'.join(boundary_end['spent_on']), '%Y-%m-%d')
+                while current < ending:
+                    days_to_add.append({
+                        'spent_on': current.strftime('%Y, %m, %d').split(', '),
+                        'sum': float("%.2f" % current_sum)
+                    })
+                    current += datetime.timedelta(days=1)
 
 
         if len(days_to_add) > 0:

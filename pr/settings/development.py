@@ -12,4 +12,18 @@ DATABASES = {
     }
 }
 
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'management',
+    'django_extensions',
+    # 'skillsmatrix.apps.SkillsmatrixConfig',
+    #'cas',
+    'mozilla_django_oidc',
+]
+
 USE_TZ = False

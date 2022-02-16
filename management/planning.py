@@ -584,7 +584,10 @@ def get_project_cost_projection(request):
     # starting at today, what will future assignments look like in terms of cost?
     date_iter = datetime.datetime.now().today()
     assignment_burn_rate = []
-    accumulation = cost_to_date[-1]['sum']
+    if cost_to_date is None or len(cost_to_date) == 0:
+        accumulation = 0.0
+    else:
+        accumulation = cost_to_date[-1]['sum']
     last_rate = 0.0
     while date_iter <= project.end_date:
         date_cost = 0.0
